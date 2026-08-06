@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="ImmoDigger.Api/ImmoDigger.Api.csproj" />
+  <Project Path="ImmoDigger.Application/ImmoDigger.Application.csproj" />
+  <Project Path="ImmoDigger.Domain/ImmoDigger.Domain.csproj" />
+  <Project Path="ImmoDigger.Infrastructure/ImmoDigger.Infrastructure.csproj" />
+  <Project Path="ImmoDigger.Tests/ImmoDigger.Tests.csproj" />
+</Solution>

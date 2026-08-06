@@ -1,0 +1,36 @@
+## .NET
+backend/**/bin/
+backend/**/obj/
+*.user
+*.suo
+.vs/
+
+## Test results
+**/TestResults/
+**/coverage*.info
+**/coverage*.xml
+
+## Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
+*.local
+
+## Environment / secrets
+.env
+.env.*.local
+!.env.example
+appsettings.*.local.json
+
+## Editors / OS
+.idea/
+.DS_Store
+Thumbs.db
+
+## Logs
+*.log
+logs/
+
+## Docker
+docker-compose.override.yml

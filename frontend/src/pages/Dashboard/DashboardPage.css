@@ -1,0 +1,11 @@
+.dashboard-page h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.4rem;
+  color: var(--color-text);
+}
+
+.dashboard-placeholder {
+  color: var(--color-text-muted);
+  max-width: 40rem;
+  line-height: 1.5;
+}
