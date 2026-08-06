@@ -1,0 +1,234 @@
+.listing-detail-status {
+  color: var(--color-text-muted);
+  padding: 1rem 0;
+}
+
+.listing-detail-back {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.listing-detail-back:hover {
+  color: var(--color-accent);
+}
+
+.listing-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.listing-detail-source {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+}
+
+.listing-detail-header h1 {
+  margin: 0.2rem 0;
+  font-size: 1.5rem;
+  color: var(--color-text);
+}
+
+.listing-detail-address {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.listing-detail-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.listing-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .listing-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.listing-detail-main,
+.listing-detail-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.listing-detail-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1.1rem 1.25rem;
+}
+
+.listing-detail-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.listing-detail-card h3 {
+  margin: 1rem 0 0.4rem;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+.listing-detail-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.85rem;
+  margin: 0;
+}
+
+.listing-detail-facts dt {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.listing-detail-facts dd {
+  margin: 0.1rem 0 0;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.listing-detail-description {
+  color: var(--color-text);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.listing-detail-link {
+  display: inline-block;
+  margin-top: 0.6rem;
+  color: var(--color-accent);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.listing-detail-link:hover {
+  text-decoration: underline;
+}
+
+.listing-detail-score-breakdown {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.88rem;
+}
+
+.listing-detail-score-breakdown li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-variant-numeric: tabular-nums;
+}
+
+.listing-detail-score-breakdown li:last-child {
+  border-bottom: none;
+}
+
+.listing-detail-score-total {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.listing-detail-signal-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.listing-detail-price-history {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.listing-detail-price-history th,
+.listing-detail-price-history td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.listing-detail-price-history td:last-child,
+.listing-detail-price-history th:last-child {
+  font-variant-numeric: tabular-nums;
+}
+
+.listing-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.85rem;
+}
+
+.listing-detail-field input,
+.listing-detail-field textarea {
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.listing-detail-yield {
+  font-size: 0.88rem;
+  color: var(--color-text);
+  margin: 0 0 0.9rem;
+}
+
+.listing-detail-primary-button,
+.listing-detail-secondary-button {
+  width: 100%;
+  padding: 0.55rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 0.6rem;
+}
+
+.listing-detail-primary-button {
+  border: 1px solid var(--color-accent);
+  background-color: var(--color-accent);
+  color: white;
+}
+
+.listing-detail-primary-button:hover {
+  opacity: 0.92;
+}
+
+.listing-detail-secondary-button {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  color: var(--color-text);
+}
+
+.listing-detail-secondary-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

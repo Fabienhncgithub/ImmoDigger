@@ -12,17 +12,18 @@ namespace ImmoDigger.Tests.Api.Controllers;
 
 public class ListingsControllerTests
 {
-    private static PropertyListing CreateListing(string city = "Uccle", string postalCode = "1180") => new()
+    private static PropertyListing CreateListing(
+        string city = "Uccle", string postalCode = "1180", string propertyType = "IncomeBuilding") => new()
     {
         Source = "Immoweb",
-        ExternalId = "EXT-1",
-        Url = "https://example.invalid/listing/1",
+        ExternalId = Guid.NewGuid().ToString(),
+        Url = $"https://example.invalid/listing/{Guid.NewGuid()}",
         Title = "Immeuble de rapport",
         City = city,
         PostalCode = postalCode,
         SaleType = "RegularSale",
-        PropertyType = "IncomeBuilding",
-        RawContentHash = "hash-1",
+        PropertyType = propertyType,
+        RawContentHash = Guid.NewGuid().ToString(),
         AskingPrice = 400_000m,
         FirstSeenAt = DateTime.UtcNow,
         LastSeenAt = DateTime.UtcNow,
@@ -41,12 +42,52 @@ public class ListingsControllerTests
         await repository.SaveChangesAsync();
         var controller = CreateController(repository);
 
-        var result = await controller.GetListings(new ListingQueryParameters { City = "Uccle" }, CancellationToken.None);
+        var result = await controller.GetListings(
+            new ListingQueryParameters { Cities = ["Uccle"] }, CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var paged = Assert.IsType<PagedResult<ListingSummaryDto>>(ok.Value);
         Assert.Single(paged.Items);
         Assert.Equal("Uccle", paged.Items[0].City);
+    }
+
+    [Fact]
+    public async Task GetListings_FiltersByMultipleCities()
+    {
+        await using var dbContext = TestDbContextFactory.Create();
+        var repository = new PropertyListingRepository(dbContext);
+        await repository.AddAsync(CreateListing(city: "Uccle"));
+        await repository.AddAsync(CreateListing(city: "Forest"));
+        await repository.AddAsync(CreateListing(city: "Anderlecht"));
+        await repository.SaveChangesAsync();
+        var controller = CreateController(repository);
+
+        var result = await controller.GetListings(
+            new ListingQueryParameters { Cities = ["Uccle", "Forest"] }, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var paged = Assert.IsType<PagedResult<ListingSummaryDto>>(ok.Value);
+        Assert.Equal(2, paged.Items.Count);
+        Assert.All(paged.Items, item => Assert.Contains(item.City, new[] { "Uccle", "Forest" }));
+    }
+
+    [Fact]
+    public async Task GetListings_FiltersByPropertyType()
+    {
+        await using var dbContext = TestDbContextFactory.Create();
+        var repository = new PropertyListingRepository(dbContext);
+        await repository.AddAsync(CreateListing(propertyType: "IncomeBuilding"));
+        await repository.AddAsync(CreateListing(propertyType: "ApartmentBuilding"));
+        await repository.SaveChangesAsync();
+        var controller = CreateController(repository);
+
+        var result = await controller.GetListings(
+            new ListingQueryParameters { PropertyTypes = ["IncomeBuilding"] }, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var paged = Assert.IsType<PagedResult<ListingSummaryDto>>(ok.Value);
+        Assert.Single(paged.Items);
+        Assert.Equal("IncomeBuilding", paged.Items[0].PropertyType);
     }
 
     [Fact]

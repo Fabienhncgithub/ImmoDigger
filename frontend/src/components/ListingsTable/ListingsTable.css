@@ -1,0 +1,50 @@
+.listings-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background-color: var(--color-surface);
+}
+
+.listings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.listings-table th,
+.listings-table td {
+  padding: 0.65rem 0.8rem;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.listings-table th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.listings-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.listings-table tbody tr:hover {
+  background-color: var(--color-background);
+}
+
+.listings-table-numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+.listings-table-title {
+  color: var(--color-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.listings-table-title:hover {
+  color: var(--color-accent);
+}

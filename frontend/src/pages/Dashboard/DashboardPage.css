@@ -1,6 +1,12 @@
 .dashboard-page h1 {
-  margin: 0 0 0.75rem;
+  margin: 0 0 1.25rem;
   font-size: 1.4rem;
+  color: var(--color-text);
+}
+
+.dashboard-page h2 {
+  margin: 2rem 0 1rem;
+  font-size: 1.1rem;
   color: var(--color-text);
 }
 
@@ -8,4 +14,16 @@
   color: var(--color-text-muted);
   max-width: 40rem;
   line-height: 1.5;
+}
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.85rem;
+}
+
+.dashboard-recent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
 }

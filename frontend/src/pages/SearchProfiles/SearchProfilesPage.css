@@ -1,0 +1,109 @@
+.search-profiles-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.search-profiles-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--color-text);
+}
+
+.search-profiles-add-button {
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-accent);
+  background-color: var(--color-accent);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.search-profiles-status {
+  color: var(--color-text-muted);
+}
+
+.search-profiles-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.search-profile-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1rem 1.15rem;
+}
+
+.search-profile-card--disabled {
+  opacity: 0.6;
+}
+
+.search-profile-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.search-profile-card-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.search-profile-card-status {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+
+.search-profile-card-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin: 0 0 0.6rem;
+}
+
+.search-profile-card-facts dt {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+.search-profile-card-facts dd {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+.search-profile-card-tags {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.75rem;
+}
+
+.search-profile-card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search-profile-card-actions button {
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.search-profile-card-delete {
+  color: var(--status-critical);
+}

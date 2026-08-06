@@ -1,4 +1,4 @@
-@ImmoDigger.Api_HostAddress = http://localhost:5000
+@ImmoDigger.Api_HostAddress = http://localhost:5080
 
 GET {{ImmoDigger.Api_HostAddress}}/api/listings
 Accept: application/json

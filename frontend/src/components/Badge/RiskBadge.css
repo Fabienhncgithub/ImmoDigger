@@ -1,0 +1,37 @@
+.risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.risk-badge--unknown {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.risk-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.risk-badge-dot--good {
+  background-color: var(--status-good);
+}
+
+.risk-badge-dot--warning {
+  background-color: var(--status-warning);
+}
+
+.risk-badge-dot--critical {
+  background-color: var(--status-critical);
+}

@@ -1,0 +1,38 @@
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left-width: 3px;
+  border-radius: 8px;
+}
+
+.stat-tile--neutral {
+  border-left-color: var(--color-border);
+}
+
+.stat-tile--good {
+  border-left-color: var(--status-good);
+}
+
+.stat-tile--warning {
+  border-left-color: var(--status-warning);
+}
+
+.stat-tile--critical {
+  border-left-color: var(--status-critical);
+}
+
+.stat-tile-label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.stat-tile-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}

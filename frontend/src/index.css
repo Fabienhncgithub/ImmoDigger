@@ -7,6 +7,12 @@
   --color-accent: #2563eb;
   --color-accent-soft: rgba(37, 99, 235, 0.1);
 
+  /* Status palette (fixed, mode-invariant - never used for series/branding). */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+
   color-scheme: light dark;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;

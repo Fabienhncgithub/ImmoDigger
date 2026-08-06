@@ -31,6 +31,13 @@ public interface IPropertyListingRepository
         string source,
         CancellationToken cancellationToken = default);
 
+    Task<int> CountBySourceAsync(string source, CancellationToken cancellationToken = default);
+
+    /// <summary>Aggregate counts for the dashboard, computed in SQL rather than loading every row.</summary>
+    Task<DashboardStats> GetDashboardStatsAsync(
+        decimal strongOpportunityThreshold,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(PropertyListing listing, CancellationToken cancellationToken = default);
 
     void Update(PropertyListing listing);

@@ -20,14 +20,19 @@ public class PropertyListingRepository(ImmoDiggerDbContext dbContext) : IPropert
     {
         var query = dbContext.PropertyListings.AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(parameters.City))
+        if (parameters.Cities is { Length: > 0 })
         {
-            query = query.Where(l => l.City == parameters.City);
+            query = query.Where(l => parameters.Cities.Contains(l.City));
         }
 
-        if (!string.IsNullOrWhiteSpace(parameters.PostalCode))
+        if (parameters.PostalCodes is { Length: > 0 })
         {
-            query = query.Where(l => l.PostalCode == parameters.PostalCode);
+            query = query.Where(l => parameters.PostalCodes.Contains(l.PostalCode));
+        }
+
+        if (parameters.PropertyTypes is { Length: > 0 })
+        {
+            query = query.Where(l => parameters.PropertyTypes.Contains(l.PropertyType));
         }
 
         if (parameters.MinimumPrice.HasValue)
@@ -160,6 +165,35 @@ public class PropertyListingRepository(ImmoDiggerDbContext dbContext) : IPropert
         await dbContext.PropertyListings
             .Where(l => l.Source == source && l.IsActive)
             .ToListAsync(cancellationToken);
+
+    public Task<int> CountBySourceAsync(string source, CancellationToken cancellationToken = default) =>
+        dbContext.PropertyListings.CountAsync(l => l.Source == source, cancellationToken);
+
+    public async Task<DashboardStats> GetDashboardStatsAsync(
+        decimal strongOpportunityThreshold,
+        CancellationToken cancellationToken = default)
+    {
+        var todayUtc = DateTime.UtcNow.Date;
+
+        var newToday = await dbContext.PropertyListings
+            .CountAsync(l => l.FirstSeenAt >= todayUtc, cancellationToken);
+        var activeCount = await dbContext.PropertyListings
+            .CountAsync(l => l.IsActive, cancellationToken);
+        // Average() over a nullable column ignores nulls (matches SQL AVG()
+        // semantics) and returns null rather than throwing on an empty set.
+        var averagePrice = await dbContext.PropertyListings
+            .Select(l => l.AskingPrice)
+            .AverageAsync(cancellationToken);
+        var averageScore = await dbContext.PropertyListings
+            .Select(l => l.OpportunityScore)
+            .AverageAsync(cancellationToken);
+        var strongOpportunities = await dbContext.PropertyListings
+            .CountAsync(l => l.OpportunityScore >= strongOpportunityThreshold, cancellationToken);
+        var highRisk = await dbContext.PropertyListings
+            .CountAsync(l => l.RiskLevel == RiskLevel.High, cancellationToken);
+
+        return new DashboardStats(newToday, activeCount, averagePrice, averageScore, strongOpportunities, highRisk);
+    }
 
     public async Task AddAsync(PropertyListing listing, CancellationToken cancellationToken = default) =>
         await dbContext.PropertyListings.AddAsync(listing, cancellationToken);

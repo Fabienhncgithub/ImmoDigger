@@ -51,7 +51,11 @@ public static class DependencyInjection
         // "GenericAgency" source is seeded disabled.
         services.AddScoped<IListingCollector, GenericAgencyPlaceholderCollector>();
 
-        services.AddHostedService<ListingCollectionBackgroundService>();
+        // Registered as itself (singleton) in addition to being hosted, so
+        // "POST /api/collection/run" can resolve the same instance and
+        // trigger a cycle on demand rather than only on the timer's tick.
+        services.AddSingleton<ListingCollectionBackgroundService>();
+        services.AddHostedService(sp => sp.GetRequiredService<ListingCollectionBackgroundService>());
 
         return services;
     }
