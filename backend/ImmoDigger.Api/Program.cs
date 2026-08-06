@@ -1,3 +1,8 @@
+using ImmoDigger.Infrastructure;
+using ImmoDigger.Infrastructure.Persistence;
+using ImmoDigger.Infrastructure.Persistence.DemoData;
+using Microsoft.EntityFrameworkCore;
+
 const string FrontendCorsPolicy = "FrontendCorsPolicy";
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // Allow the local Vite dev server to call the API in development.
 // Production origins will be configured via appsettings/environment
@@ -23,6 +30,22 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Apply pending EF Core migrations, then seed reference data (the five
+// V1 sources) and, if DemoMode is enabled, the fictional demo listings.
+// This requires a reachable PostgreSQL instance; see .env.example /
+// docker-compose.yml (added in a later commit) for local setup.
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ImmoDiggerDbContext>();
+    await dbContext.Database.MigrateAsync();
+    await ReferenceDataSeeder.SeedAsync(dbContext);
+
+    if (app.Configuration.GetValue<bool>("DemoMode"))
+    {
+        await DemoDataSeeder.SeedAsync(dbContext);
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
