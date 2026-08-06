@@ -1,4 +1,6 @@
 using ImmoDigger.Application.Interfaces;
+using ImmoDigger.Infrastructure.BackgroundServices;
+using ImmoDigger.Infrastructure.Collectors;
 using ImmoDigger.Infrastructure.Persistence;
 using ImmoDigger.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +41,17 @@ public static class DependencyInjection
         services.AddScoped<IPropertyListingRepository, PropertyListingRepository>();
         services.AddScoped<IListingSourceRepository, ListingSourceRepository>();
         services.AddScoped<ISearchProfileRepository, SearchProfileRepository>();
+
+        services.Configure<CollectionOptions>(configuration.GetSection(CollectionOptions.SectionName));
+
+        // Real, ToS-compliant collectors for Biddit/Immoweb/Immovlan/Zimmo
+        // are added once each source has been vetted (public API/RSS
+        // availability, terms of use). Until then, GenericAgencyPlaceholderCollector
+        // exercises the collection framework end to end; its matching
+        // "GenericAgency" source is seeded disabled.
+        services.AddScoped<IListingCollector, GenericAgencyPlaceholderCollector>();
+
+        services.AddHostedService<ListingCollectionBackgroundService>();
 
         return services;
     }
