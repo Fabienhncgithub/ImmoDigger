@@ -16,6 +16,7 @@ public class PropertyListingConfiguration : IEntityTypeConfiguration<PropertyLis
         builder.Property(l => l.ExternalId).HasMaxLength(200).IsRequired();
         builder.Property(l => l.Url).HasMaxLength(2000).IsRequired();
         builder.Property(l => l.Title).HasMaxLength(500).IsRequired();
+        builder.Property(l => l.ImageUrl).HasMaxLength(2000);
         builder.Property(l => l.Description).HasColumnType("text");
         builder.Property(l => l.Address).HasMaxLength(300);
         builder.Property(l => l.PostalCode).HasMaxLength(20);

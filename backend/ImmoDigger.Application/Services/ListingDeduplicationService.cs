@@ -125,6 +125,7 @@ public class ListingDeduplicationService(IPropertyListingRepository repository) 
     private static void ApplyCollectedFields(PropertyListing listing, CollectedListing collected)
     {
         listing.Title = collected.Title;
+        listing.ImageUrl = collected.ImageUrl;
         listing.Description = collected.Description;
         listing.Address = collected.Address;
         listing.PostalCode = collected.PostalCode;

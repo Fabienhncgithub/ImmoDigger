@@ -7,6 +7,7 @@ public sealed record ListingDetailDto(
     string ExternalId,
     string Url,
     string Title,
+    string? ImageUrl,
     string Description,
     string Address,
     string PostalCode,

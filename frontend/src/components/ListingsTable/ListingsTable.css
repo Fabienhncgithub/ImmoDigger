@@ -48,3 +48,21 @@
 .listings-table-title:hover {
   color: var(--color-accent);
 }
+
+.listings-table-thumbnail {
+  display: block;
+  width: 56px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  background-color: var(--color-background);
+}
+
+.listings-table-thumbnail--empty {
+  border: 1px dashed var(--color-border);
+}
+
+.listings-table-price-label {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}

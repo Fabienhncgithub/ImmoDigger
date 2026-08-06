@@ -20,6 +20,9 @@ public class PropertyListing
 
     public required string Title { get; set; }
 
+    /// <summary>URL of the listing's main/cover photo, if the source provides one. Not in the original field list - added for the listing cards/detail page.</summary>
+    public string? ImageUrl { get; set; }
+
     public string Description { get; set; } = string.Empty;
 
     public string Address { get; set; } = string.Empty;

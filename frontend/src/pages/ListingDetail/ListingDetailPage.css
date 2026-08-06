@@ -15,6 +15,15 @@
   color: var(--color-accent);
 }
 
+.listing-detail-image {
+  width: 100%;
+  max-height: 340px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 1.25rem;
+  background-color: var(--color-surface);
+}
+
 .listing-detail-header {
   display: flex;
   align-items: flex-start;
@@ -22,6 +31,20 @@
   flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1.5rem;
+}
+
+.listing-detail-price {
+  margin: 0.5rem 0 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.listing-detail-price-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
 }
 
 .listing-detail-source {

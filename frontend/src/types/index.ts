@@ -13,9 +13,11 @@ export interface ListingSummary {
   id: string
   source: string
   title: string
+  imageUrl: string | null
   city: string
   postalCode: string
   askingPrice: number | null
+  currentBid: number | null
   unitCount: number | null
   livingArea: number | null
   pebRating: string | null
@@ -35,6 +37,7 @@ export interface ListingDetail {
   externalId: string
   url: string
   title: string
+  imageUrl: string | null
   description: string
   address: string
   postalCode: string

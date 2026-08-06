@@ -51,8 +51,36 @@ const PROPERTY_TYPE_LABELS: Record<string, string> = {
   IncomeBuilding: 'Immeuble de rapport',
   ApartmentBuilding: 'Immeuble a appartements',
   House: 'Maison',
+  Warehouse: 'Entrepot',
 }
 
 export function formatPropertyType(propertyType: string): string {
   return PROPERTY_TYPE_LABELS[propertyType] ?? propertyType
+}
+
+export interface DisplayPrice {
+  label: string
+  value: string
+  isAuction: boolean
+}
+
+/**
+ * A public-sale (vente publique/enchere) listing's "price" is a starting
+ * bid or a live current bid, not a fixed asking price - showing it under a
+ * flat "Prix" label is misleading. This picks the right label and value:
+ * the current bid when one has been recorded, otherwise the starting price
+ * ("mise a prix"), otherwise the regular asking price.
+ */
+export function getDisplayPrice(saleType: string, askingPrice: number | null, currentBid: number | null): DisplayPrice {
+  const isAuction = saleType === 'PublicSale'
+
+  if (!isAuction) {
+    return { label: 'Prix demande', value: formatPrice(askingPrice), isAuction: false }
+  }
+
+  if (currentBid !== null) {
+    return { label: 'Enchere actuelle', value: formatPrice(currentBid), isAuction: true }
+  }
+
+  return { label: 'Mise a prix', value: formatPrice(askingPrice), isAuction: true }
 }

@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from 'react'
-import { searchCommunes, BRUSSELS_COMMUNES, type Commune } from '../../data/communes'
+import { searchCommunes, BELGIAN_COMMUNES, type Commune } from '../../data/communes'
 import './CommuneMultiSelect.css'
 
 interface CommuneMultiSelectProps {
@@ -43,7 +43,7 @@ export function CommuneMultiSelect({ selectedPostalCodes, onChange }: CommuneMul
       {selectedPostalCodes.length > 0 && (
         <div className="commune-select-chips">
           {selectedPostalCodes.map((postalCode) => {
-            const commune = BRUSSELS_COMMUNES.find((c) => c.postalCode === postalCode)
+            const commune = BELGIAN_COMMUNES.find((c) => c.postalCode === postalCode)
             return (
               <span key={postalCode} className="commune-select-chip">
                 {commune ? `${commune.name} (${postalCode})` : postalCode}

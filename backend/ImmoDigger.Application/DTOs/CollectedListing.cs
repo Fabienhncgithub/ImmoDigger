@@ -20,6 +20,8 @@ public sealed record CollectedListing
 
     public required string Title { get; init; }
 
+    public string? ImageUrl { get; init; }
+
     public string Description { get; init; } = string.Empty;
 
     public string Address { get; init; } = string.Empty;

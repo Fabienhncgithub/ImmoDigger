@@ -1,11 +1,10 @@
 .property-card {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 10px;
+  overflow: hidden;
   text-decoration: none;
   color: inherit;
   transition: border-color 0.15s ease;
@@ -13,6 +12,21 @@
 
 .property-card:hover {
   border-color: var(--color-accent);
+}
+
+.property-card-image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  background-color: var(--color-background);
+  display: block;
+}
+
+.property-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
 }
 
 .property-card-header {
@@ -57,6 +71,12 @@
   font-weight: 700;
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
+}
+
+.property-card-price-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
 }
 
 .property-card-facts {

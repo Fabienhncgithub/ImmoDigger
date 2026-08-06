@@ -14,6 +14,7 @@ const PROPERTY_TYPE_OPTIONS = [
   { value: 'IncomeBuilding', label: 'Immeuble de rapport' },
   { value: 'ApartmentBuilding', label: 'Immeuble a appartements' },
   { value: 'House', label: 'Maison' },
+  { value: 'Warehouse', label: 'Entrepot' },
 ]
 
 export function SearchProfileForm({ initial, onSubmit, onCancel, isSubmitting }: SearchProfileFormProps) {

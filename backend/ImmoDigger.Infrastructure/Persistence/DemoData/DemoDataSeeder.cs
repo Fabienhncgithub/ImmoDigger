@@ -16,6 +16,10 @@ namespace ImmoDigger.Infrastructure.Persistence.DemoData;
 /// from the product brief (public sale, non-compliant electrics, PEB G,
 /// unit-count mismatch) so the risk analysis service (added in a later
 /// commit) has a meaningful fixture to work against.
+///
+/// ImageUrl values point to Lorem Picsum (picsum.photos), a free stock-photo
+/// placeholder service, seeded deterministically per listing - not photos
+/// from any real listing.
 /// </summary>
 public static class DemoDataSeeder
 {
@@ -48,6 +52,7 @@ public static class DemoDataSeeder
         {
             Source = "Biddit",
             ExternalId = "DEMO-BIDDIT-001",
+            ImageUrl = "https://picsum.photos/seed/DEMO-BIDDIT-001/640/420",
             Url = "https://example-demo.invalid/biddit/demo-001",
             Title = "Maison de rapport - Avenue Coghen",
             Description = "Immeuble de rapport (donnees fictives de demonstration) situe avenue Coghen a Uccle. " +
@@ -86,6 +91,7 @@ public static class DemoDataSeeder
         {
             Source = "Immoweb",
             ExternalId = "DEMO-IMMOWEB-002",
+            ImageUrl = "https://picsum.photos/seed/DEMO-IMMOWEB-002/640/420",
             Url = "https://example-demo.invalid/immoweb/demo-002",
             Title = "Immeuble a appartements - Chaussee de Bruxelles",
             Description = "Immeuble de six appartements (donnees fictives) recemment renove, chaussee de " +
@@ -120,6 +126,7 @@ public static class DemoDataSeeder
         {
             Source = "Immovlan",
             ExternalId = "DEMO-IMMOVLAN-003",
+            ImageUrl = "https://picsum.photos/seed/DEMO-IMMOVLAN-003/640/420",
             Url = "https://example-demo.invalid/immovlan/demo-003",
             Title = "Maison de rapport - Rue de la Source",
             Description = "Maison divisee en trois logements (donnees fictives), rue de la Source a Saint-Gilles.",
@@ -153,6 +160,7 @@ public static class DemoDataSeeder
         {
             Source = "Zimmo",
             ExternalId = "DEMO-ZIMMO-004",
+            ImageUrl = "https://picsum.photos/seed/DEMO-ZIMMO-004/640/420",
             Url = "https://example-demo.invalid/zimmo/demo-004",
             Title = "Immeuble a appartements - Rue du Bailli",
             Description = "Quatre appartements avec terrasse (donnees fictives), rue du Bailli a Ixelles.",
@@ -186,6 +194,7 @@ public static class DemoDataSeeder
         {
             Source = "GenericAgency",
             ExternalId = "DEMO-AGENCY-005",
+            ImageUrl = "https://picsum.photos/seed/DEMO-AGENCY-005/640/420",
             Url = "https://example-demo.invalid/agency/demo-005",
             Title = "Immeuble de rapport - Rue Wayez",
             Description = "Immeuble de cinq logements (donnees fictives), rue Wayez a Anderlecht.",
@@ -220,6 +229,7 @@ public static class DemoDataSeeder
         {
             Source = "Biddit",
             ExternalId = "DEMO-BIDDIT-006",
+            ImageUrl = "https://picsum.photos/seed/DEMO-BIDDIT-006/640/420",
             Url = "https://example-demo.invalid/biddit/demo-006",
             Title = "Immeuble de rapport - Chaussee de Haecht",
             Description = "Immeuble avec extension arriere non documentee (donnees fictives), chaussee de " +
@@ -256,6 +266,7 @@ public static class DemoDataSeeder
         {
             Source = "Immoweb",
             ExternalId = "DEMO-IMMOWEB-007",
+            ImageUrl = "https://picsum.photos/seed/DEMO-IMMOWEB-007/640/420",
             Url = "https://example-demo.invalid/immoweb/demo-007",
             Title = "Immeuble a appartements - Rue de Ribaucourt",
             Description = "Immeuble de trois appartements (donnees fictives), rue de Ribaucourt a " +
@@ -292,6 +303,7 @@ public static class DemoDataSeeder
         {
             Source = "Immovlan",
             ExternalId = "DEMO-IMMOVLAN-008",
+            ImageUrl = "https://picsum.photos/seed/DEMO-IMMOVLAN-008/640/420",
             Url = "https://example-demo.invalid/immovlan/demo-008",
             Title = "Immeuble de rapport - Rue des Tongres",
             Description = "Petit immeuble de deux logements (donnees fictives), rue des Tongres a Etterbeek.",
@@ -325,6 +337,7 @@ public static class DemoDataSeeder
         {
             Source = "Zimmo",
             ExternalId = "DEMO-ZIMMO-009",
+            ImageUrl = "https://picsum.photos/seed/DEMO-ZIMMO-009/640/420",
             Url = "https://example-demo.invalid/zimmo/demo-009",
             Title = "Immeuble a appartements - Avenue Georges Henri",
             Description = "Immeuble de standing avec cinq appartements (donnees fictives), avenue Georges " +
@@ -361,6 +374,7 @@ public static class DemoDataSeeder
         {
             Source = "GenericAgency",
             ExternalId = "DEMO-AGENCY-010",
+            ImageUrl = "https://picsum.photos/seed/DEMO-AGENCY-010/640/420",
             Url = "https://example-demo.invalid/agency/demo-010",
             Title = "Immeuble de rapport - Avenue Charles-Quint",
             Description = "Immeuble de quatre logements (donnees fictives), avenue Charles-Quint a Ganshoren. " +

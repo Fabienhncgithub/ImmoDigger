@@ -18,6 +18,7 @@ import {
   formatPrice,
   formatPropertyType,
   formatSaleType,
+  getDisplayPrice,
 } from '../../utils/format'
 import type { OpportunityScoreBreakdown } from '../../types'
 import './ListingDetailPage.css'
@@ -61,11 +62,17 @@ export function ListingDetailPage() {
     setBreakdown(response.scoreBreakdown)
   }
 
+  const price = getDisplayPrice(listing.saleType, listing.askingPrice, listing.currentBid)
+
   return (
     <section className="listing-detail-page">
       <Link to="/listings" className="listing-detail-back">
         ← Retour aux annonces
       </Link>
+
+      {listing.imageUrl && (
+        <img className="listing-detail-image" src={listing.imageUrl} alt="" />
+      )}
 
       <header className="listing-detail-header">
         <div>
@@ -74,6 +81,12 @@ export function ListingDetailPage() {
           <p className="listing-detail-address">
             {listing.address ? `${listing.address}, ` : ''}
             {listing.postalCode} {listing.city}
+          </p>
+          <p className="listing-detail-price">
+            {price.value}
+            <span className="listing-detail-price-label">
+              {price.isAuction ? ` · ${price.label}` : ''}
+            </span>
           </p>
         </div>
         <div className="listing-detail-badges">
@@ -89,13 +102,15 @@ export function ListingDetailPage() {
             <h2>Informations</h2>
             <dl className="listing-detail-facts">
               <div>
-                <dt>Prix demande</dt>
+                <dt>{listing.saleType === 'PublicSale' ? 'Mise a prix' : 'Prix demande'}</dt>
                 <dd>{formatPrice(listing.askingPrice)}</dd>
               </div>
-              <div>
-                <dt>Enchere actuelle</dt>
-                <dd>{formatPrice(listing.currentBid)}</dd>
-              </div>
+              {listing.saleType === 'PublicSale' && (
+                <div>
+                  <dt>Enchere actuelle</dt>
+                  <dd>{formatPrice(listing.currentBid)}</dd>
+                </div>
+              )}
               <div>
                 <dt>Type de vente</dt>
                 <dd>{formatSaleType(listing.saleType)}</dd>
