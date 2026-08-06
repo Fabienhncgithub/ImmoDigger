@@ -1,3 +1,5 @@
+using System.Reflection;
+using FluentValidation;
 using ImmoDigger.Application.Interfaces;
 using ImmoDigger.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +18,8 @@ public static class DependencyInjection
     {
         services.AddScoped<IListingDeduplicationService, ListingDeduplicationService>();
         services.AddScoped<IInvestmentAnalysisService, InvestmentAnalysisService>();
+
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
         return services;
     }

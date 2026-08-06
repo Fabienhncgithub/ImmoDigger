@@ -1,15 +1,18 @@
+using ImmoDigger.Application.Common;
+using ImmoDigger.Application.DTOs;
 using ImmoDigger.Domain.Entities;
 
 namespace ImmoDigger.Application.Interfaces;
 
-/// <summary>
-/// Persistence access for <see cref="PropertyListing"/>. Query methods
-/// beyond simple lookups (pagination, filters, ...) are added in the
-/// commit that introduces the listings API.
-/// </summary>
+/// <summary>Persistence access for <see cref="PropertyListing"/>.</summary>
 public interface IPropertyListingRepository
 {
     Task<PropertyListing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>Filtered, sorted and paginated listings for <c>GET /api/listings</c>.</summary>
+    Task<PagedResult<PropertyListing>> GetPagedAsync(
+        ListingQueryParameters parameters,
+        CancellationToken cancellationToken = default);
 
     /// <summary>Deduplication level 1: exact (Source, ExternalId) match.</summary>
     Task<PropertyListing?> GetBySourceAndExternalIdAsync(
