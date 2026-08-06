@@ -1,3 +1,4 @@
+using ImmoDigger.Application.Common;
 using ImmoDigger.Application.Interfaces;
 using ImmoDigger.Domain.Entities;
 using Microsoft.Extensions.DependencyInjection;
@@ -103,6 +104,7 @@ public class ListingCollectionBackgroundService(
             // non-thread-safe EF Core context.
             using var scope = scopeFactory.CreateScope();
             var sourceRepository = scope.ServiceProvider.GetRequiredService<IListingSourceRepository>();
+            var deduplicationService = scope.ServiceProvider.GetRequiredService<IListingDeduplicationService>();
             var collectors = scope.ServiceProvider.GetServices<IListingCollector>();
 
             var source = await sourceRepository.GetByIdAsync(sourceId, cancellationToken);
@@ -128,13 +130,36 @@ public class ListingCollectionBackgroundService(
             {
                 var collected = await collector.CollectAsync(timeoutCts.Token);
 
-                logger.LogInformation(
-                    "Collector {SourceName} found {Count} listing(s).", source.Name, collected.Count);
+                int newCount = 0, updatedCount = 0, unchangedCount = 0, duplicateCount = 0;
 
-                // Turning collected listings into new/updated PropertyListing
-                // rows (and detecting duplicates) is the deduplication
-                // service's job, added in a later commit. This framework
-                // only proves out collection + run-history tracking so far.
+                foreach (var item in collected)
+                {
+                    var outcome = await deduplicationService.ProcessAsync(item, cancellationToken);
+
+                    switch (outcome.Result)
+                    {
+                        case DeduplicationResult.NewListing:
+                            newCount++;
+                            break;
+                        case DeduplicationResult.ExistingListingUpdated:
+                            updatedCount++;
+                            break;
+                        case DeduplicationResult.Unchanged:
+                            unchangedCount++;
+                            break;
+                        case DeduplicationResult.ProbableDuplicate:
+                            duplicateCount++;
+                            logger.LogWarning(
+                                "Collector {SourceName}: probable duplicate not imported ({Reasons})",
+                                source.Name, string.Join(" ", outcome.Reasons));
+                            break;
+                    }
+                }
+
+                logger.LogInformation(
+                    "Collector {SourceName} found {Count} listing(s): {New} new, {Updated} updated, " +
+                    "{Unchanged} unchanged, {Duplicate} probable duplicate(s).",
+                    source.Name, collected.Count, newCount, updatedCount, unchangedCount, duplicateCount);
 
                 source.LastSuccessfulRunAt = DateTime.UtcNow;
                 source.LastError = null;
@@ -156,6 +181,10 @@ public class ListingCollectionBackgroundService(
             }
 
             sourceRepository.Update(source);
+
+            // Both repositories resolved from this scope share the same
+            // DbContext, so this single call also persists every listing
+            // added/updated by the deduplication service above.
             await sourceRepository.SaveChangesAsync(cancellationToken);
         }
         finally

@@ -1,3 +1,4 @@
+using ImmoDigger.Application;
 using ImmoDigger.Infrastructure;
 using ImmoDigger.Infrastructure.Persistence;
 using ImmoDigger.Infrastructure.Persistence.DemoData;
@@ -13,6 +14,7 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // Allow the local Vite dev server to call the API in development.

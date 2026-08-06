@@ -1,6 +1,6 @@
 ## .NET
 backend/**/bin/
-backend/**/bin\*/
+backend/**/bin\\*/
 backend/**/obj/
 *.user
 *.suo

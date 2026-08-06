@@ -32,5 +32,16 @@ public interface IPropertyListingRepository
 
     void Update(PropertyListing listing);
 
+    /// <summary>
+    /// Appends a new price point to an already-tracked <paramref name="listing"/>
+    /// (e.g. when a collected price differs from the last known one).
+    /// Deliberately explicit rather than just `listing.PriceHistory.Add(entry)`:
+    /// EF Core cannot reliably infer that a new child added to an
+    /// already-persisted parent's loaded collection is itself new when its
+    /// key (a client-generated GUID) is already non-default, so the entry
+    /// must be registered on the tracker directly.
+    /// </summary>
+    void AddPriceHistoryEntry(PropertyListing listing, ListingPriceHistory entry);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

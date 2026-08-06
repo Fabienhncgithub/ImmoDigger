@@ -1,4 +1,5 @@
 using ImmoDigger.Application.Interfaces;
+using ImmoDigger.Application.Services;
 using ImmoDigger.Domain.Entities;
 using ImmoDigger.Infrastructure.BackgroundServices;
 using ImmoDigger.Infrastructure.Persistence;
@@ -25,6 +26,8 @@ public class ListingCollectionBackgroundServiceTests
         var databaseName = Guid.NewGuid().ToString();
         services.AddDbContext<ImmoDiggerDbContext>(o => o.UseInMemoryDatabase(databaseName));
         services.AddScoped<IListingSourceRepository, ListingSourceRepository>();
+        services.AddScoped<IPropertyListingRepository, PropertyListingRepository>();
+        services.AddScoped<IListingDeduplicationService, ListingDeduplicationService>();
 
         foreach (var collector in collectors)
         {
