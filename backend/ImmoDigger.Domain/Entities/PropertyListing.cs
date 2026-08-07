@@ -74,6 +74,20 @@ public class PropertyListing
 
     public decimal? CadastralIncome { get; set; }
 
+    // --- Email-import provenance (added for the compliant multi-source
+    // pipeline: Immoweb/Immovlan/Zimmo/agency listings only ever reach
+    // ImmoDigger via alert emails the user already receives, never by
+    // scraping those sites directly). Null for listings collected any
+    // other way. -------------------------------------------------------
+
+    /// <summary>Message-Id of the alert email this listing was extracted from, if any.</summary>
+    public string? EmailMessageId { get; set; }
+
+    public string? EmailSubject { get; set; }
+
+    /// <summary>Sender address of the alert email, if any (e.g. alerts@immoweb.be).</summary>
+    public string? EmailSender { get; set; }
+
     public DateTime? AuctionStartDate { get; set; }
 
     public DateTime? AuctionEndDate { get; set; }

@@ -1,6 +1,11 @@
 using ImmoDigger.Application.Interfaces;
 using ImmoDigger.Infrastructure.BackgroundServices;
 using ImmoDigger.Infrastructure.Collectors;
+using ImmoDigger.Infrastructure.Collectors.Biddit;
+using ImmoDigger.Infrastructure.Collectors.RegieDesBatiments;
+using ImmoDigger.Infrastructure.EmailImport;
+using ImmoDigger.Infrastructure.EmailImport.Parsers;
+using ImmoDigger.Infrastructure.Import;
 using ImmoDigger.Infrastructure.Persistence;
 using ImmoDigger.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -41,15 +46,61 @@ public static class DependencyInjection
         services.AddScoped<IPropertyListingRepository, PropertyListingRepository>();
         services.AddScoped<IListingSourceRepository, ListingSourceRepository>();
         services.AddScoped<ISearchProfileRepository, SearchProfileRepository>();
+        services.AddScoped<IProcessedEmailMessageRepository, ProcessedEmailMessageRepository>();
 
         services.Configure<CollectionOptions>(configuration.GetSection(CollectionOptions.SectionName));
 
-        // Real, ToS-compliant collectors for Biddit/Immoweb/Immovlan/Zimmo
-        // are added once each source has been vetted (public API/RSS
-        // availability, terms of use). Until then, GenericAgencyPlaceholderCollector
-        // exercises the collection framework end to end; its matching
-        // "GenericAgency" source is seeded disabled.
+        // Immoweb (explicit anti-scraping terms with penalty clauses),
+        // Immovlan (blocks automated requests at the network/WAF level)
+        // and Zimmo/SNCB-belgiantrain (Cloudflare bot-fingerprinting) were
+        // checked and ruled out: no collector exists for them, and none
+        // should be added without a genuine change in what those sites
+        // allow. GenericAgencyPlaceholderCollector keeps exercising the
+        // framework end to end; its "GenericAgency" source is seeded
+        // disabled.
         services.AddScoped<IListingCollector, GenericAgencyPlaceholderCollector>();
+
+        // Biddit and the Regie des Batiments were vetted (robots.txt,
+        // terms of use where reachable, absence of anti-bot protection)
+        // before being wired up - see each collector's class doc comment
+        // for exactly what was checked and how.
+        services.AddHttpClient(BidditCollector.HttpClientName, client =>
+        {
+            client.BaseAddress = new Uri("https://www.biddit.be");
+            client.Timeout = TimeSpan.FromSeconds(15);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(CollectorConstants.UserAgent);
+        });
+        services.AddScoped<IListingCollector, BidditCollector>();
+
+        services.AddHttpClient(RegieDesBatimentsCollector.HttpClientName, client =>
+        {
+            client.BaseAddress = new Uri("https://www.regiedesbatiments.be");
+            client.Timeout = TimeSpan.FromSeconds(15);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(CollectorConstants.UserAgent);
+        });
+        services.AddScoped<IListingCollector, RegieDesBatimentsCollector>();
+
+        // Email-import pipeline (Immoweb/Immovlan/Zimmo/agencies): never
+        // touches those sites directly, only parses alert emails already
+        // sitting in the user's own inbox. IEmailInbox is a no-op
+        // placeholder until real mailbox credentials are configured - see
+        // NullEmailInbox's doc comment. Agency-specific parsers are added
+        // by registering more AgencyEmailParser instances, not new files.
+        services.AddScoped<IEmailInbox, NullEmailInbox>();
+        services.AddScoped<IEmailListingParser, ImmowebEmailParser>();
+        services.AddScoped<IEmailListingParser, ImmovlanEmailParser>();
+        services.AddScoped<IEmailListingParser, ZimmoEmailParser>();
+        services.AddScoped<IListingCollector, EmailImportListingCollector>();
+
+        // Manual single-URL import ("POST /api/import/url"): a one-off,
+        // user-initiated fetch of a page's own Open Graph metadata, not a
+        // crawl - see OpenGraphManualImportService's doc comment.
+        services.AddHttpClient(OpenGraphManualImportService.HttpClientName, client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(10);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(CollectorConstants.UserAgent);
+        });
+        services.AddScoped<IManualListingImportService, OpenGraphManualImportService>();
 
         // Registered as itself (singleton) in addition to being hosted, so
         // "POST /api/collection/run" can resolve the same instance and

@@ -1,0 +1,22 @@
+{
+  "reference": "999002",
+  "handlingMethod": "ONLINE_PRIVATE_SALE",
+  "firstPublicationDateTime": "2026-01-10T09:00:00Z",
+  "sellingPrice": 220000.00,
+  "properties": [
+    {
+      "reference": "999002",
+      "propertyType": "LAND",
+      "title": { "fr": "TERRAIN FICTIF HORS ZONE - TEST", "nl": null, "en": null },
+      "description": { "fr": "Annonce fictive utilisee uniquement pour les tests automatises.", "nl": null, "en": null },
+      "address": {
+        "estateNumber": "",
+        "postalCode": "8000",
+        "street": { "fr": "Rue Fictive", "nl": null },
+        "municipality": { "fr": "Bruges", "nl": "Brugge" }
+      },
+      "pictures": [],
+      "features": { "terrainSurface": 500.0 }
+    }
+  ]
+}

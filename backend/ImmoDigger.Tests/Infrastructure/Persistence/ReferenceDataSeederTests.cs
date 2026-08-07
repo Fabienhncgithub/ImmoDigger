@@ -63,10 +63,13 @@ public class ReferenceDataSeederTests
     }
 
     [Fact]
-    public async Task SeedAsync_DisablesInstitutionalSourcesByDefault()
+    public async Task SeedAsync_DisablesInstitutionalSourcesWithoutAVettedCollector()
     {
-        // No collector has been vetted/implemented for these yet - see the
-        // class doc comment. They must never come up enabled.
+        // RegieDesBatiments now has a real, vetted collector (clean
+        // server-rendered HTML, no anti-bot protection - see its class doc
+        // comment) so it is the one institutional source seeded enabled.
+        // The rest still have no collector implemented and must never come
+        // up enabled.
         await using var dbContext = TestDbContextFactory.Create();
 
         await ReferenceDataSeeder.SeedAsync(dbContext);
@@ -76,6 +79,30 @@ public class ReferenceDataSeederTests
             .ToListAsync();
 
         Assert.Equal(5, institutional.Count);
-        Assert.All(institutional, s => Assert.False(s.IsEnabled));
+        Assert.All(institutional.Where(s => s.Name != "RegieDesBatiments"), s => Assert.False(s.IsEnabled));
+
+        var regieDesBatiments = institutional.Single(s => s.Name == "RegieDesBatiments");
+        Assert.True(regieDesBatiments.IsEnabled);
+        Assert.True(regieDesBatiments.Allowed);
+    }
+
+    [Fact]
+    public async Task SeedAsync_MarksImmowebImmovlanZimmo_AsEmailOnlyAndNotAllowedForDirectScraping()
+    {
+        await using var dbContext = TestDbContextFactory.Create();
+
+        await ReferenceDataSeeder.SeedAsync(dbContext);
+
+        var externalAlertSources = await dbContext.ListingSources
+            .Where(s => new[] { "Immoweb", "Immovlan", "Zimmo" }.Contains(s.Name))
+            .ToListAsync();
+
+        Assert.Equal(3, externalAlertSources.Count);
+        Assert.All(externalAlertSources, s =>
+        {
+            Assert.Equal(ImmoDigger.Domain.Common.CollectionMethod.Email, s.CollectionMethod);
+            Assert.False(s.Allowed);
+            Assert.False(s.IsEnabled);
+        });
     }
 }

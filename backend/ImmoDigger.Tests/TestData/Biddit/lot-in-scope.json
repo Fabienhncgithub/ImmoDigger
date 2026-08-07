@@ -1,0 +1,37 @@
+{
+  "reference": "999001",
+  "handlingMethod": "ONLINE_PUBLIC_SALE",
+  "firstPublicationDateTime": "2026-01-10T09:00:00Z",
+  "biddingStartDateTime": "2026-02-01T10:00:00Z",
+  "biddingEndDateTime": "2026-02-10T10:00:00Z",
+  "currentPrice": null,
+  "startingPrice": 350000.00,
+  "sellingPrice": null,
+  "properties": [
+    {
+      "reference": "999001",
+      "propertyType": "HOUSE",
+      "propertySubtype": "HOUSE",
+      "title": { "fr": "MAISON DE RAPPORT FICTIVE - TEST", "nl": null, "en": null },
+      "description": { "fr": "Annonce fictive utilisee uniquement pour les tests automatises.", "nl": null, "en": null },
+      "address": {
+        "estateNumber": "12",
+        "postalCode": "1050",
+        "street": { "fr": "Rue de Test", "nl": null },
+        "municipality": { "fr": "Ixelles", "nl": "Elsene" }
+      },
+      "pictures": [
+        { "orderIndex": 1, "medium": "https://example-test.invalid/medium.jpg", "large": "https://example-test.invalid/large.jpg" }
+      ],
+      "livingSurfaceArea": 280.0,
+      "numberOfBedrooms": 4,
+      "numberOfBathrooms": 2,
+      "energeticClassRbc": "CLASS_E",
+      "energeticClassRw": null,
+      "energeticClassRf": null,
+      "construction": { "numberOfHousingUnits": 3, "constructionYear": 1930 },
+      "features": { "terrainSurface": 150.0, "garageSurface": 18.0, "hasTerrace": true, "hasGarden": false },
+      "landIncome": { "landIncome": 900.0 }
+    }
+  ]
+}

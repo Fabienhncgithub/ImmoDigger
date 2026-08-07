@@ -151,6 +151,9 @@ public class ListingDeduplicationService(IPropertyListingRepository repository) 
         listing.AuctionStartDate = collected.AuctionStartDate;
         listing.AuctionEndDate = collected.AuctionEndDate;
         listing.PublishedAt = collected.PublishedAt;
+        listing.EmailMessageId = collected.EmailMessageId;
+        listing.EmailSubject = collected.EmailSubject;
+        listing.EmailSender = collected.EmailSender;
     }
 
     /// <summary>

@@ -20,6 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="TestData\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ImmoDigger.Domain\ImmoDigger.Domain.csproj" />
     <ProjectReference Include="..\ImmoDigger.Application\ImmoDigger.Application.csproj" />
     <ProjectReference Include="..\ImmoDigger.Infrastructure\ImmoDigger.Infrastructure.csproj" />

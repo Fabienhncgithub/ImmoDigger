@@ -51,10 +51,18 @@ namespace ImmoDigger.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("Allowed")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("BaseUrl")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<string>("CollectionMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("boolean");
@@ -73,8 +81,17 @@ namespace ImmoDigger.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
                     b.Property<int>("PollingIntervalMinutes")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("RobotsCheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("TermsCheckedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -114,6 +131,39 @@ namespace ImmoDigger.Infrastructure.Persistence.Migrations
                     b.HasIndex("PropertyListingId", "Channel");
 
                     b.ToTable("NotificationHistories", (string)null);
+                });
+
+            modelBuilder.Entity("ImmoDigger.Domain.Entities.ProcessedEmailMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EmailMessageId")
+                        .IsRequired()
+                        .HasMaxLength(998)
+                        .HasColumnType("character varying(998)");
+
+                    b.Property<int>("ListingsExtractedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Sender")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(998)
+                        .HasColumnType("character varying(998)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmailMessageId")
+                        .IsUnique();
+
+                    b.ToTable("ProcessedEmailMessages", (string)null);
                 });
 
             modelBuilder.Entity("ImmoDigger.Domain.Entities.PropertyListing", b =>
@@ -162,6 +212,18 @@ namespace ImmoDigger.Infrastructure.Persistence.Migrations
 
                     b.Property<bool?>("ElectricalInstallationCompliant")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("EmailMessageId")
+                        .HasMaxLength(998)
+                        .HasColumnType("character varying(998)");
+
+                    b.Property<string>("EmailSender")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<string>("EmailSubject")
+                        .HasMaxLength(998)
+                        .HasColumnType("character varying(998)");
 
                     b.Property<decimal?>("EstimatedAcquisitionCosts")
                         .HasPrecision(14, 2)

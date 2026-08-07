@@ -87,21 +87,69 @@ identifiants SMTP, URL de l'API pour le frontend).
 ## Feuille de route (commits)
 
 1. ✅ Initialisation du monorepo (solution .NET, projets, frontend, structure)
-2. Modèle de données `PropertyListing` et persistance PostgreSQL
-3. Framework de collecte (`IListingCollector`, `BackgroundService`)
-4. Détection de doublons et historique des prix
-5. Analyse d'investissement et score de risque
-6. API REST (annonces, profils de recherche, sources)
-7. Notifications Telegram
-8. Tableau de bord React
+2. ✅ Modèle de données `PropertyListing` et persistance PostgreSQL
+3. ✅ Framework de collecte (`IListingCollector`, `BackgroundService`)
+4. ✅ Détection de doublons et historique des prix
+5. ✅ Analyse d'investissement et score de risque
+6. ✅ API REST (annonces, profils de recherche, sources)
+7. ⏸️ Notifications Telegram (reporté à la demande de l'utilisateur)
+8. ✅ Tableau de bord React
 9. Couverture de tests complète
 10. Déploiement Docker et documentation complète
+
+Réalisé hors feuille de route initiale : refonte de l'ingestion en
+pipeline multi-source conforme (voir section suivante), collecteurs réels
+Biddit et Régie des Bâtiments/Défense.
+
+## Pipeline de collecte conforme
+
+ImmoDigger ne scrape jamais un site qui l'interdit explicitement ou le
+bloque techniquement. Plutôt que de traiter "scraper ou renoncer" comme un
+choix binaire, la collecte est organisée en plusieurs sources, chacune
+n'utilisant que des moyens autorisés :
+
+```text
+Alertes email (Immoweb, Immovlan, Zimmo, agences)
+        ↓
+Sites/API publics vétés (Biddit, Régie des Bâtiments/Défense)
+        ↓
+Import manuel par URL (POST /api/import/url)
+        ↓
+Déduplication → Analyse d'investissement → Score
+```
+
+- **Alertes email** (`IEmailListingImporter`, `IEmailListingParser`) :
+  Immoweb, Immovlan et Zimmo ne sont jamais scrapés directement (CGU
+  explicites pour Immoweb, WAF/Cloudflare actifs pour les deux autres) ;
+  ils sont classés `ExternalAlertSource` et leurs annonces n'arrivent que
+  via les emails d'alerte que l'utilisateur reçoit déjà. Une agence
+  immobilière s'ajoute en enregistrant une nouvelle instance
+  `AgencyEmailParser` (domaine expéditeur + forme d'URL), pas un nouveau
+  fichier. Le raccordement à une vraie boîte mail (IMAP ou webhook) reste
+  à faire : `IEmailInbox` n'a qu'une implémentation `NullEmailInbox` (no-op)
+  pour l'instant.
+- **Sites/API publics vétés** (`IListingCollector`) : Biddit et la Régie
+  des Bâtiments (qui gère aussi la vente des anciens sites Défense), après
+  vérification de `robots.txt`, des CGU et de l'absence de protection
+  anti-bot. Voir `ReferenceDataSeeder` pour la décision et sa justification
+  par source (`CollectionMethod`, `Allowed`, `Notes`).
+- **Import manuel par URL** (`POST /api/import/url`) : l'utilisateur colle
+  l'URL d'une annonce qu'il regarde ; l'app lit uniquement les métadonnées
+  Open Graph publiques de la page, ou accepte une saisie manuelle si la
+  page ne peut pas être récupérée.
+- **Extension navigateur** (TODO, non développée) : un bouton "Ajouter à
+  ImmoDigger" sur les pages d'annonces consultées par l'utilisateur,
+  transmettant les informations déjà visibles à l'écran vers son instance
+  personnelle. Idée retenue pour une étape ultérieure.
 
 ## Limites légales et techniques de la collecte
 
 ImmoDigger ne contourne jamais un CAPTCHA, une authentification, une
-limitation technique ou une interdiction explicite des sites collectés.
-Chaque source est désactivable, interrogée à fréquence raisonnable, avec un
-délai entre les requêtes et un User-Agent identifiant clairement
-l'application lorsque cela est autorisé. Le détail par source sera
-documenté au fur et à mesure de l'implémentation des collecteurs.
+limitation technique, une protection anti-bot (WAF, Cloudflare) ou une
+interdiction explicite des sites collectés. Chaque source déclare
+explicitement sa méthode de collecte (`CollectionMethod`) et si elle est
+`Allowed` ; ce dernier champ est un verrou de conformité central
+(`ListingCollectionBackgroundService`), indépendant du simple
+activé/désactivé (`IsEnabled`). Chaque source restant scrapable est
+désactivable, interrogée à fréquence raisonnable, avec un délai entre les
+requêtes et un User-Agent identifiant clairement l'application.

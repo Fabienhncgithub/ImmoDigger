@@ -28,6 +28,9 @@ public class PropertyListingConfiguration : IEntityTypeConfiguration<PropertyLis
         builder.Property(l => l.RiskSummary).HasColumnType("text");
         builder.Property(l => l.PersonalNotes).HasColumnType("text");
         builder.Property(l => l.RawContentHash).HasMaxLength(128).IsRequired();
+        builder.Property(l => l.EmailMessageId).HasMaxLength(998);
+        builder.Property(l => l.EmailSubject).HasMaxLength(998);
+        builder.Property(l => l.EmailSender).HasMaxLength(320);
 
         builder.Property(l => l.AskingPrice).HasPrecision(14, 2);
         builder.Property(l => l.CurrentBid).HasPrecision(14, 2);

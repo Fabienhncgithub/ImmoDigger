@@ -113,6 +113,16 @@ public class ListingCollectionBackgroundService(
                 return;
             }
 
+            // Hard compliance gate, independent of whatever an individual
+            // collector implementation does or doesn't check itself: a
+            // source explicitly marked not-Allowed never runs, period.
+            if (!source.Allowed)
+            {
+                logger.LogWarning(
+                    "Source {SourceName} is enabled but not Allowed (compliance gate) - skipping.", source.Name);
+                return;
+            }
+
             var collector = collectors.FirstOrDefault(
                 c => string.Equals(c.SourceName, source.Name, StringComparison.OrdinalIgnoreCase));
 

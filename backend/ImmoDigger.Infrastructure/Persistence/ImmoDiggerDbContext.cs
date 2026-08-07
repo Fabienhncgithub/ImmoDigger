@@ -15,6 +15,8 @@ public class ImmoDiggerDbContext(DbContextOptions<ImmoDiggerDbContext> options) 
 
     public DbSet<NotificationHistory> NotificationHistories => Set<NotificationHistory>();
 
+    public DbSet<ProcessedEmailMessage> ProcessedEmailMessages => Set<ProcessedEmailMessage>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ImmoDiggerDbContext).Assembly);

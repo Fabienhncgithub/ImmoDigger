@@ -18,6 +18,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IListingDeduplicationService, ListingDeduplicationService>();
         services.AddScoped<IInvestmentAnalysisService, InvestmentAnalysisService>();
+        services.AddScoped<IEmailListingImporter, EmailListingImportService>();
 
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 

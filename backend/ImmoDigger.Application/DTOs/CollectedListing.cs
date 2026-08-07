@@ -74,4 +74,12 @@ public sealed record CollectedListing
 
     /// <summary>Hash of the cleaned/normalized content, used for deduplication level 5.</summary>
     public required string RawContentHash { get; init; }
+
+    // --- Email-import provenance, see PropertyListing.EmailMessageId ---
+
+    public string? EmailMessageId { get; init; }
+
+    public string? EmailSubject { get; init; }
+
+    public string? EmailSender { get; init; }
 }
