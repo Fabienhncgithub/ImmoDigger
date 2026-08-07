@@ -90,6 +90,7 @@ public static class DependencyInjection
         services.AddScoped<IEmailListingParser, ImmowebEmailParser>();
         services.AddScoped<IEmailListingParser, ImmovlanEmailParser>();
         services.AddScoped<IEmailListingParser, ZimmoEmailParser>();
+        services.AddScoped<IEmailListingParser, TweedehandsEmailParser>();
         services.AddScoped<IListingCollector, EmailImportListingCollector>();
 
         // Manual single-URL import ("POST /api/import/url"): a one-off,

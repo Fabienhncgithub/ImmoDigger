@@ -94,10 +94,10 @@ public class ReferenceDataSeederTests
         await ReferenceDataSeeder.SeedAsync(dbContext);
 
         var externalAlertSources = await dbContext.ListingSources
-            .Where(s => new[] { "Immoweb", "Immovlan", "Zimmo" }.Contains(s.Name))
+            .Where(s => new[] { "Immoweb", "Immovlan", "Zimmo", "2ememain" }.Contains(s.Name))
             .ToListAsync();
 
-        Assert.Equal(3, externalAlertSources.Count);
+        Assert.Equal(4, externalAlertSources.Count);
         Assert.All(externalAlertSources, s =>
         {
             Assert.Equal(ImmoDigger.Domain.Common.CollectionMethod.Email, s.CollectionMethod);

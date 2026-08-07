@@ -86,10 +86,26 @@ public static class ReferenceDataSeeder
             },
             new ListingSource
             {
+                // Not scraped directly (sui generis database right, Livre
+                // XI of the Code de droit economique - repeated/systematic
+                // extraction is explicitly prohibited except via a
+                // personal-use RSS feed that no longer exists on the live
+                // site). Alert emails are parsed instead.
+                Name = "2ememain",
+                BaseUrl = "https://www.2ememain.be/l/immo/",
+                IsEnabled = false,
+                CollectionMethod = CollectionMethod.Email,
+                Allowed = false,
+                TermsCheckedAt = checkedAt,
+                Notes = "ExternalAlertSource: terms of use invoke the sui generis database right against systematic/repeated extraction (Livre XI WER); the only carve-out is personal-use RSS (max 100 items), and no RSS feed for search results could be found on the live site. Website scraping stays Allowed=false permanently; alert-email parsing is the only sanctioned path (see TweedehandsEmailParser).",
+                PollingIntervalMinutes = 15,
+            },
+            new ListingSource
+            {
                 // Umbrella source actually run by ListingCollectionBackgroundService:
                 // EmailImportListingCollector fans out to every registered
-                // IEmailListingParser (Immoweb/Immovlan/Zimmo/agencies) in
-                // one pass. Disabled until a real IEmailInbox replaces the
+                // IEmailListingParser (Immoweb/Immovlan/Zimmo/2ememain/agencies)
+                // in one pass. Disabled until a real IEmailInbox replaces the
                 // NullEmailInbox placeholder - see its doc comment.
                 Name = "EmailImport",
                 BaseUrl = "mailbox://alerts",
