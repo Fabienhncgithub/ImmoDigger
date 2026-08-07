@@ -195,6 +195,59 @@ public class PropertyListingRepository(ImmoDiggerDbContext dbContext) : IPropert
         return new DashboardStats(newToday, activeCount, averagePrice, averageScore, strongOpportunities, highRisk);
     }
 
+    public Task<int> CountMatchingProfileAsync(SearchProfile profile, CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.PropertyListings.Where(l => l.IsActive).AsQueryable();
+
+        if (profile.PostalCodes.Length > 0)
+        {
+            query = query.Where(l => profile.PostalCodes.Contains(l.PostalCode));
+        }
+
+        if (profile.PropertyTypes.Length > 0)
+        {
+            query = query.Where(l => profile.PropertyTypes.Contains(l.PropertyType));
+        }
+
+        if (profile.MaximumPrice.HasValue)
+        {
+            query = query.Where(l => l.AskingPrice <= profile.MaximumPrice);
+        }
+
+        if (profile.MinimumGrossYield.HasValue)
+        {
+            query = query.Where(l => l.EstimatedGrossYield >= profile.MinimumGrossYield);
+        }
+
+        if (profile.MinimumUnitCount.HasValue)
+        {
+            query = query.Where(l =>
+                (l.ObservedUnitCount ?? l.OfficialUnitCount ?? 0) >= profile.MinimumUnitCount);
+        }
+
+        if (profile.MinimumLivingArea.HasValue)
+        {
+            query = query.Where(l => l.LivingArea >= profile.MinimumLivingArea);
+        }
+
+        if (profile.RequireGarage)
+        {
+            query = query.Where(l => l.HasGarage == true);
+        }
+
+        if (!profile.IncludePublicSales)
+        {
+            query = query.Where(l => l.SaleType != "PublicSale");
+        }
+
+        if (profile.MinimumOpportunityScore.HasValue)
+        {
+            query = query.Where(l => l.OpportunityScore >= profile.MinimumOpportunityScore);
+        }
+
+        return query.CountAsync(cancellationToken);
+    }
+
     public async Task AddAsync(PropertyListing listing, CancellationToken cancellationToken = default) =>
         await dbContext.PropertyListings.AddAsync(listing, cancellationToken);
 

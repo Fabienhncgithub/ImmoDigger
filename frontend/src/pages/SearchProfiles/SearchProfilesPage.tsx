@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   useCreateSearchProfile,
   useDeleteSearchProfile,
@@ -7,6 +8,7 @@ import {
 } from '../../hooks/useSearchProfiles'
 import { SearchProfileForm } from './SearchProfileForm'
 import { formatPercent, formatPrice } from '../../utils/format'
+import { searchProfileToListingFilters } from '../../utils/searchProfileFilters'
 import type { SearchProfile, SearchProfileRequest } from '../../types'
 import './SearchProfilesPage.css'
 
@@ -113,6 +115,15 @@ function ProfileCard({
       {profile.postalCodes.length > 0 && (
         <p className="search-profile-card-tags">Communes : {profile.postalCodes.join(', ')}</p>
       )}
+
+      <Link
+        className="search-profile-card-matches"
+        to="/listings"
+        state={{ filters: searchProfileToListingFilters(profile) }}
+      >
+        {profile.matchingListingsCount} annonce{profile.matchingListingsCount !== 1 ? 's' : ''} correspondante
+        {profile.matchingListingsCount !== 1 ? 's' : ''} →
+      </Link>
 
       <div className="search-profile-card-actions">
         <button type="button" onClick={onEdit}>

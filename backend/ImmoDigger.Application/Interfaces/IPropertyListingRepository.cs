@@ -38,6 +38,13 @@ public interface IPropertyListingRepository
         decimal strongOpportunityThreshold,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// How many active listings currently satisfy a <see cref="SearchProfile"/>'s
+    /// criteria - lets a profile show "N annonces correspondantes" without
+    /// needing the notification pipeline (deferred) to exist first.
+    /// </summary>
+    Task<int> CountMatchingProfileAsync(SearchProfile profile, CancellationToken cancellationToken = default);
+
     Task AddAsync(PropertyListing listing, CancellationToken cancellationToken = default);
 
     void Update(PropertyListing listing);

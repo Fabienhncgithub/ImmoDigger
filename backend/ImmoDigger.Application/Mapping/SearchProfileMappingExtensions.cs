@@ -5,7 +5,7 @@ namespace ImmoDigger.Application.Mapping;
 
 public static class SearchProfileMappingExtensions
 {
-    public static SearchProfileDto ToDto(this SearchProfile profile) => new(
+    public static SearchProfileDto ToDto(this SearchProfile profile, int matchingListingsCount) => new(
         profile.Id,
         profile.Name,
         profile.MaximumPrice,
@@ -17,7 +17,8 @@ public static class SearchProfileMappingExtensions
         profile.PostalCodes,
         profile.PropertyTypes,
         profile.MinimumOpportunityScore,
-        profile.IsEnabled);
+        profile.IsEnabled,
+        matchingListingsCount);
 
     public static void ApplyRequest(this SearchProfile profile, SearchProfileRequest request)
     {

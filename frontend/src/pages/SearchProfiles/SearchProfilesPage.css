@@ -89,6 +89,19 @@
   margin: 0 0 0.75rem;
 }
 
+.search-profile-card-matches {
+  display: inline-block;
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.search-profile-card-matches:hover {
+  text-decoration: underline;
+}
+
 .search-profile-card-actions {
   display: flex;
   gap: 0.5rem;

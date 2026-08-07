@@ -11,13 +11,22 @@ namespace ImmoDigger.Api.Controllers;
 [Route("api/search-profiles")]
 public class SearchProfilesController(
     ISearchProfileRepository repository,
+    IPropertyListingRepository listingRepository,
     IValidator<SearchProfileRequest> validator) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<SearchProfileDto>>> GetAll(CancellationToken cancellationToken)
     {
         var profiles = await repository.GetAllAsync(cancellationToken);
-        return Ok(profiles.Select(p => p.ToDto()).ToList());
+
+        var dtos = new List<SearchProfileDto>();
+        foreach (var profile in profiles)
+        {
+            var matchingCount = await listingRepository.CountMatchingProfileAsync(profile, cancellationToken);
+            dtos.Add(profile.ToDto(matchingCount));
+        }
+
+        return Ok(dtos);
     }
 
     [HttpPost]
@@ -41,7 +50,8 @@ public class SearchProfilesController(
         await repository.AddAsync(profile, cancellationToken);
         await repository.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetAll), new { id = profile.Id }, profile.ToDto());
+        var matchingCount = await listingRepository.CountMatchingProfileAsync(profile, cancellationToken);
+        return CreatedAtAction(nameof(GetAll), new { id = profile.Id }, profile.ToDto(matchingCount));
     }
 
     [HttpPut("{id:guid}")]
@@ -69,7 +79,8 @@ public class SearchProfilesController(
         repository.Update(profile);
         await repository.SaveChangesAsync(cancellationToken);
 
-        return Ok(profile.ToDto());
+        var matchingCount = await listingRepository.CountMatchingProfileAsync(profile, cancellationToken);
+        return Ok(profile.ToDto(matchingCount));
     }
 
     [HttpDelete("{id:guid}")]

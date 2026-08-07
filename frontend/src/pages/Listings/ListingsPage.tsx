@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useListings } from '../../hooks/useListings'
 import { PropertyCard } from '../../components/PropertyCard/PropertyCard'
 import { ListingsTable } from '../../components/ListingsTable/ListingsTable'
@@ -24,7 +25,14 @@ const PROPERTY_TYPE_OPTIONS = [
 ]
 
 export function ListingsPage() {
-  const [filters, setFilters] = useState<ListingQueryParams>(emptyFilters)
+  // A search profile's "voir les annonces correspondantes" link navigates
+  // here with its filters in router state (see searchProfileToListingFilters);
+  // the lazy initializer only runs once, so a filter changed afterwards
+  // isn't overwritten by a stale location.state on re-render.
+  const location = useLocation()
+  const [filters, setFilters] = useState<ListingQueryParams>(
+    () => (location.state as { filters?: ListingQueryParams } | null)?.filters ?? emptyFilters,
+  )
   const [searchDraft, setSearchDraft] = useState('')
   const [page, setPage] = useState(1)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')

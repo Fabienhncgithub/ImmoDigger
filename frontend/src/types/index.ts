@@ -152,9 +152,11 @@ export interface SearchProfile {
   propertyTypes: string[]
   minimumOpportunityScore: number | null
   isEnabled: boolean
+  /** How many active listings satisfy this profile's criteria right now (computed server-side). */
+  matchingListingsCount: number
 }
 
-export type SearchProfileRequest = Omit<SearchProfile, 'id'>
+export type SearchProfileRequest = Omit<SearchProfile, 'id' | 'matchingListingsCount'>
 
 export interface Source {
   id: string
