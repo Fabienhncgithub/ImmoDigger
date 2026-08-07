@@ -48,6 +48,13 @@
   background-color: rgba(0, 0, 0, 0.08);
 }
 
+/* Same colors as a regular chip (keeps text/background contrast already
+   validated) - just an accent ring so a "whole region" chip reads as a
+   group rather than a single commune. */
+.commune-select-chip-region {
+  box-shadow: 0 0 0 1.5px var(--color-accent);
+}
+
 .commune-select-input-wrapper {
   position: relative;
 }
@@ -102,4 +109,14 @@
   color: var(--color-text-muted);
   font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
+}
+
+.commune-select-suggestion-region {
+  border-bottom: 1px solid var(--color-border) !important;
+  border-radius: 6px 6px 0 0 !important;
+}
+
+.commune-select-suggestion-region span:first-child {
+  font-weight: 700;
+  color: var(--color-accent);
 }

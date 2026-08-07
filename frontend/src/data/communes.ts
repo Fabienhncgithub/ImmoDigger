@@ -615,3 +615,38 @@ export function searchCommunes(query: string): Commune[] {
       commune.postalCode.startsWith(normalized) || commune.name.toLowerCase().includes(normalized),
   ).slice(0, 8)
 }
+
+/**
+ * A region groups several communes so the search can offer "toute la
+ * region" as one pick instead of forcing the user to add every commune by
+ * hand - the postal codes still get OR-matched individually server-side,
+ * this is purely a search-UX shortcut. Only Bruxelles-Capitale for now;
+ * add more (Brabant wallon, Brabant flamand, ...) the same way if useful.
+ */
+export interface CommuneRegion {
+  name: string
+  /** Extra words that should also surface this region (besides its own name). */
+  aliases: string[]
+  postalCodes: string[]
+}
+
+export const BELGIAN_REGIONS: CommuneRegion[] = [
+  {
+    name: 'Region de Bruxelles-Capitale',
+    aliases: ['bruxelles', 'brussel', 'brussels', 'bxl', 'capitale'],
+    postalCodes: BELGIAN_COMMUNES.filter((c) => c.postalCode >= '1000' && c.postalCode <= '1210').map(
+      (c) => c.postalCode,
+    ),
+  },
+]
+
+export function searchRegions(query: string): CommuneRegion[] {
+  const normalized = query.trim().toLowerCase()
+  if (!normalized) return []
+
+  return BELGIAN_REGIONS.filter(
+    (region) =>
+      region.name.toLowerCase().includes(normalized) ||
+      region.aliases.some((alias) => alias.includes(normalized) || normalized.includes(alias)),
+  )
+}
