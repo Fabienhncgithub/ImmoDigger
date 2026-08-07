@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useListings } from '../../hooks/useListings'
+import { useSources } from '../../hooks/useSources'
 import { PropertyCard } from '../../components/PropertyCard/PropertyCard'
 import { ListingsTable } from '../../components/ListingsTable/ListingsTable'
 import { Pagination } from '../../components/Pagination/Pagination'
@@ -24,6 +25,21 @@ const PROPERTY_TYPE_OPTIONS = [
   { value: 'Warehouse', label: 'Entrepot' },
 ]
 
+/** "depuis N semaines" options for filters.firstSeenFrom - computed at pick time, not stored as a fixed date. */
+const PERIOD_OPTIONS = [
+  { label: 'Periode (toutes)', weeks: null },
+  { label: '1 semaine', weeks: 1 },
+  { label: '2 semaines', weeks: 2 },
+  { label: '4 semaines', weeks: 4 },
+  { label: '3 mois', weeks: 13 },
+]
+
+function weeksAgoIso(weeks: number): string {
+  const date = new Date()
+  date.setDate(date.getDate() - weeks * 7)
+  return date.toISOString()
+}
+
 export function ListingsPage() {
   // A search profile's "voir les annonces correspondantes" link navigates
   // here with its filters in router state (see searchProfileToListingFilters);
@@ -36,6 +52,11 @@ export function ListingsPage() {
   const [searchDraft, setSearchDraft] = useState('')
   const [page, setPage] = useState(1)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  // Tracked separately from filters.firstSeenFrom (a computed ISO timestamp)
+  // so the <select> has a stable value to match against instead of
+  // re-deriving "how many weeks ago" from a timestamp that drifts by the
+  // millisecond every time weeksAgoIso() is called.
+  const [periodWeeks, setPeriodWeeks] = useState<number | null>(null)
 
   // Debounce free-text search so every keystroke doesn't trigger a request.
   useEffect(() => {
@@ -47,6 +68,7 @@ export function ListingsPage() {
   }, [searchDraft])
 
   const { data, isLoading, isError } = useListings({ ...filters, page, pageSize: PAGE_SIZE })
+  const { data: sources } = useSources()
 
   function updateFilter<K extends keyof ListingQueryParams>(key: K, value: ListingQueryParams[K]) {
     setFilters((current) => ({ ...current, [key]: value }))
@@ -56,7 +78,13 @@ export function ListingsPage() {
   function resetFilters() {
     setFilters(emptyFilters)
     setSearchDraft('')
+    setPeriodWeeks(null)
     setPage(1)
+  }
+
+  function updatePeriod(weeks: number | null) {
+    setPeriodWeeks(weeks)
+    updateFilter('firstSeenFrom', weeks ? weeksAgoIso(weeks) : undefined)
   }
 
   function togglePropertyType(value: string) {
@@ -151,11 +179,11 @@ export function ListingsPage() {
 
         <select value={filters.source ?? ''} onChange={(e) => updateFilter('source', e.target.value || undefined)}>
           <option value="">Source (toutes)</option>
-          <option value="Biddit">Biddit</option>
-          <option value="Immoweb">Immoweb</option>
-          <option value="Immovlan">Immovlan</option>
-          <option value="Zimmo">Zimmo</option>
-          <option value="GenericAgency">Agence generique</option>
+          {sources?.map((source) => (
+            <option key={source.id} value={source.name}>
+              {source.name}
+            </option>
+          ))}
         </select>
 
         <select
@@ -196,6 +224,17 @@ export function ListingsPage() {
           />
           Actives uniquement
         </label>
+
+        <select
+          value={periodWeeks ?? ''}
+          onChange={(e) => updatePeriod(e.target.value ? Number(e.target.value) : null)}
+        >
+          {PERIOD_OPTIONS.map((option) => (
+            <option key={option.label} value={option.weeks ?? ''}>
+              {option.label}
+            </option>
+          ))}
+        </select>
 
         <select
           value={filters.sortBy ?? 'firstSeenAt'}

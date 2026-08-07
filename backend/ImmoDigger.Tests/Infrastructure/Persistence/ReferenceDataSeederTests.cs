@@ -51,6 +51,25 @@ public class ReferenceDataSeederTests
     }
 
     [Fact]
+    public async Task SeedAsync_AddsAMissingBaselineSource_WithoutDuplicatingExistingOnes()
+    {
+        // Simulates a database seeded before a source (here "2ememain")
+        // was added to the baseline list - the seeder must fill the gap
+        // on the next run rather than only ever seeding an empty table.
+        await using var dbContext = TestDbContextFactory.Create();
+        await ReferenceDataSeeder.SeedAsync(dbContext);
+        var twoememain = await dbContext.ListingSources.SingleAsync(s => s.Name == "2ememain");
+        dbContext.ListingSources.Remove(twoememain);
+        await dbContext.SaveChangesAsync();
+        var countAfterRemoval = await dbContext.ListingSources.CountAsync();
+
+        await ReferenceDataSeeder.SeedAsync(dbContext);
+
+        Assert.Equal(countAfterRemoval + 1, await dbContext.ListingSources.CountAsync());
+        Assert.Equal(1, await dbContext.ListingSources.CountAsync(s => s.Name == "2ememain"));
+    }
+
+    [Fact]
     public async Task SeedAsync_DisablesTheGenericAgencyPlaceholderByDefault()
     {
         await using var dbContext = TestDbContextFactory.Create();

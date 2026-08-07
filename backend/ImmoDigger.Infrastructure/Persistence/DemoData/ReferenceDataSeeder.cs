@@ -5,8 +5,12 @@ using Microsoft.EntityFrameworkCore;
 namespace ImmoDigger.Infrastructure.Persistence.DemoData;
 
 /// <summary>
-/// Seeds the baseline <see cref="ListingSource"/> rows if none exist yet.
-/// Every row's <see cref="ListingSource.CollectionMethod"/> and
+/// Seeds any baseline <see cref="ListingSource"/> rows that don't exist
+/// yet, matched by <see cref="ListingSource.Name"/> - not a one-shot
+/// "only if the table is empty" seed, so a source added to this list
+/// later (as the project grows) still shows up in a database that was
+/// already seeded, without needing a reset. Every row's
+/// <see cref="ListingSource.CollectionMethod"/> and
 /// <see cref="ListingSource.Allowed"/> record the actual compliance
 /// decision for that source - see each row's <see cref="ListingSource.Notes"/>
 /// for what was checked and why. <see cref="ListingSource.IsEnabled"/> only
@@ -25,14 +29,12 @@ public static class ReferenceDataSeeder
 {
     public static async Task SeedAsync(ImmoDiggerDbContext dbContext, CancellationToken cancellationToken = default)
     {
-        if (await dbContext.ListingSources.AnyAsync(cancellationToken))
-        {
-            return;
-        }
+        var existingNames = await dbContext.ListingSources.Select(s => s.Name).ToListAsync(cancellationToken);
 
         var checkedAt = new DateTime(2026, 8, 6, 0, 0, 0, DateTimeKind.Utc);
 
-        dbContext.ListingSources.AddRange(
+        var baseline = new List<ListingSource>
+        {
             new ListingSource
             {
                 Name = "Biddit",
@@ -189,8 +191,16 @@ public static class ReferenceDataSeeder
                 RobotsCheckedAt = checkedAt,
                 Notes = "Cloudflare bot-fingerprinting on belgiantrain.be. Allowed=false permanently unless that changes.",
                 PollingIntervalMinutes = 60,
-            });
+            },
+        };
 
+        var missing = baseline.Where(s => !existingNames.Contains(s.Name)).ToList();
+        if (missing.Count == 0)
+        {
+            return;
+        }
+
+        dbContext.ListingSources.AddRange(missing);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }
