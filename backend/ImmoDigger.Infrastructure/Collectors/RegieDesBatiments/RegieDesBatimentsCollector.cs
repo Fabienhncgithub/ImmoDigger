@@ -181,10 +181,15 @@ public class RegieDesBatimentsCollector(IHttpClientFactory httpClientFactory, IL
             return null;
         }
 
+        // AssumeUniversal + AdjustToUniversal: the site gives a bare date with
+        // no time zone; PostgreSQL's "timestamp with time zone" columns
+        // reject anything that isn't Kind=Utc, so every DateTime leaving a
+        // collector must carry that kind explicitly rather than the default
+        // Unspecified TryParse would otherwise produce.
         return DateTime.TryParse(
             $"{match.Groups[3].Value}-{match.Groups[2].Value}-{match.Groups[1].Value}",
             CultureInfo.InvariantCulture,
-            DateTimeStyles.None,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
             out var date)
             ? date
             : null;

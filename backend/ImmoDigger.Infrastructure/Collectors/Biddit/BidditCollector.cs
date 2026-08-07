@@ -196,9 +196,9 @@ public class BidditCollector(
             HasTerrace = property?.Features?.HasTerrace,
             HasGarden = property?.Features?.HasGarden,
             CadastralIncome = property?.LandIncome?.LandIncome,
-            AuctionStartDate = lot.BiddingStartDateTime,
-            AuctionEndDate = lot.BiddingEndDateTime,
-            PublishedAt = lot.FirstPublicationDateTime,
+            AuctionStartDate = ToUtc(lot.BiddingStartDateTime),
+            AuctionEndDate = ToUtc(lot.BiddingEndDateTime),
+            PublishedAt = ToUtc(lot.FirstPublicationDateTime),
             RawContentHash = ComputeContentHash(title, description, askingPrice, lot.CurrentPrice, address),
         };
     }
@@ -239,6 +239,18 @@ public class BidditCollector(
 
     private static string? FirstNonEmpty(params string?[] candidates) =>
         candidates.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c));
+
+    /// <summary>
+    /// Biddit's JSON timestamps carry no time zone offset, so
+    /// System.Text.Json deserializes them as Kind=Unspecified - PostgreSQL's
+    /// "timestamp with time zone" columns reject anything that isn't
+    /// Kind=Utc. The values are already effectively UTC-ish (Biddit is a
+    /// Belgian-only system); the small offset this can introduce doesn't
+    /// matter for how this app uses these dates (display, rough auction
+    /// windows), unlike crashing the whole collection cycle on real data.
+    /// </summary>
+    private static DateTime? ToUtc(DateTime? value) =>
+        value is null ? null : DateTime.SpecifyKind(value.Value, DateTimeKind.Utc);
 
     private static string ToRelativePath(string absoluteOrRelativeUrl) =>
         Uri.TryCreate(absoluteOrRelativeUrl, UriKind.Absolute, out var uri) ? uri.PathAndQuery : absoluteOrRelativeUrl;

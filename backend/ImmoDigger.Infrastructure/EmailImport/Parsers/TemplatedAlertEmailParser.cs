@@ -97,7 +97,9 @@ public abstract class TemplatedAlertEmailParser(string sourceName, string sender
 
         var price = ExtractPrice(blockText);
         var (postalCode, city) = ExtractPostalCodeAndCity(blockText);
-        var image = block.SelectSingleNode(".//img[@src]")?.GetAttributeValue("src", null);
+        var image = block.SelectSingleNode(".//img[@src]")?.GetAttributeValue("src", string.Empty) is { Length: > 0 } src
+            ? src
+            : null;
 
         return new CollectedListing
         {

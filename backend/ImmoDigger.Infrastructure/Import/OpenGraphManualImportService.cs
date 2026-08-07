@@ -106,7 +106,9 @@ public class OpenGraphManualImportService(
         };
 
     private static string? MetaContent(HtmlDocument doc, string property) =>
-        doc.DocumentNode.SelectSingleNode($"//meta[@property='{property}']")?.GetAttributeValue("content", null);
+        doc.DocumentNode.SelectSingleNode($"//meta[@property='{property}']")?.GetAttributeValue("content", string.Empty) is { Length: > 0 } content
+            ? content
+            : null;
 
     private static decimal? ParsePrice(string? raw) =>
         decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var price)
