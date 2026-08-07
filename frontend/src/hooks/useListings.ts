@@ -63,3 +63,20 @@ export function useMarkReviewed(id: string) {
     onSuccess: invalidate,
   })
 }
+
+/**
+ * Permanently deletes a listing the user isn't interested in. Note: if
+ * it's still live on its source next time that source is collected, it
+ * will come back as a "new" listing - deduplication has no record that it
+ * was deliberately removed.
+ */
+export function useDeleteListing() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => listingsApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: listingsQueryKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+}

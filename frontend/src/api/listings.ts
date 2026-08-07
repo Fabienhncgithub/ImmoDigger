@@ -23,4 +23,6 @@ export const listingsApi = {
   markReviewed: (id: string) => apiClient.post<ListingDetail>(`/listings/${id}/mark-reviewed`),
 
   getPriceHistory: (id: string) => apiClient.get<PriceHistoryEntry[]>(`/listings/${id}/price-history`),
+
+  remove: (id: string) => apiClient.delete<void>(`/listings/${id}`),
 }

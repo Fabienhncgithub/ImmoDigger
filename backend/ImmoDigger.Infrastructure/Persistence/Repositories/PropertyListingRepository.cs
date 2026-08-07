@@ -254,6 +254,9 @@ public class PropertyListingRepository(ImmoDiggerDbContext dbContext) : IPropert
     public void Update(PropertyListing listing) =>
         dbContext.PropertyListings.Update(listing);
 
+    public void Remove(PropertyListing listing) =>
+        dbContext.PropertyListings.Remove(listing);
+
     public void AddPriceHistoryEntry(PropertyListing listing, ListingPriceHistory entry)
     {
         entry.PropertyListingId = listing.Id;

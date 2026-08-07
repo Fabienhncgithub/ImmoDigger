@@ -37,6 +37,27 @@ public class ListingsController(
         return listing is null ? NotFound() : Ok(listing.ToDetailDto());
     }
 
+    /// <summary>
+    /// Permanently deletes a listing the user isn't interested in. Note:
+    /// if it's still live on its source next time that source is
+    /// collected, it will come back as a "new" listing - deduplication has
+    /// no record that it was deliberately removed.
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteListing(Guid id, CancellationToken cancellationToken)
+    {
+        var listing = await repository.GetByIdAsync(id, cancellationToken);
+        if (listing is null)
+        {
+            return NotFound();
+        }
+
+        repository.Remove(listing);
+        await repository.SaveChangesAsync(cancellationToken);
+
+        return NoContent();
+    }
+
     /// <summary>Recomputes gross yield, risk assessment and opportunity score, and persists them.</summary>
     [HttpPost("{id:guid}/analyze")]
     public async Task<ActionResult<AnalyzeListingResponse>> Analyze(Guid id, CancellationToken cancellationToken)

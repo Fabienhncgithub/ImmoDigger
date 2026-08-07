@@ -225,7 +225,8 @@
 }
 
 .listing-detail-primary-button,
-.listing-detail-secondary-button {
+.listing-detail-secondary-button,
+.listing-detail-delete-button {
   width: 100%;
   padding: 0.55rem 0.9rem;
   border-radius: 6px;
@@ -252,6 +253,21 @@
 }
 
 .listing-detail-secondary-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.listing-detail-delete-button {
+  border: 1px solid var(--status-critical);
+  background-color: var(--color-background);
+  color: var(--status-critical);
+}
+
+.listing-detail-delete-button:hover {
+  background-color: rgba(220, 38, 38, 0.08);
+}
+
+.listing-detail-delete-button:disabled {
   opacity: 0.6;
   cursor: default;
 }

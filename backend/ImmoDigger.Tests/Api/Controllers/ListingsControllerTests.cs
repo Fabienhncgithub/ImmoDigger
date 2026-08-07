@@ -228,4 +228,32 @@ public class ListingsControllerTests
 
         Assert.IsType<NotFoundResult>(result.Result);
     }
+
+    [Fact]
+    public async Task DeleteListing_RemovesTheListing()
+    {
+        await using var dbContext = TestDbContextFactory.Create();
+        var repository = new PropertyListingRepository(dbContext);
+        var listing = CreateListing();
+        await repository.AddAsync(listing);
+        await repository.SaveChangesAsync();
+        var controller = CreateController(repository);
+
+        var result = await controller.DeleteListing(listing.Id, CancellationToken.None);
+
+        Assert.IsType<NoContentResult>(result);
+        Assert.Null(await repository.GetByIdAsync(listing.Id));
+    }
+
+    [Fact]
+    public async Task DeleteListing_ReturnsNotFound_ForUnknownId()
+    {
+        await using var dbContext = TestDbContextFactory.Create();
+        var repository = new PropertyListingRepository(dbContext);
+        var controller = CreateController(repository);
+
+        var result = await controller.DeleteListing(Guid.NewGuid(), CancellationToken.None);
+
+        Assert.IsType<NotFoundResult>(result);
+    }
 }

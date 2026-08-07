@@ -4,6 +4,7 @@ import { ScoreBadge } from '../Badge/ScoreBadge'
 import { RiskBadge } from '../Badge/RiskBadge'
 import { PebBadge } from '../Badge/PebBadge'
 import { formatArea, formatDate, formatPercent, getDisplayPrice } from '../../utils/format'
+import { useDeleteListing } from '../../hooks/useListings'
 import './ListingsTable.css'
 
 interface ListingsTableProps {
@@ -11,6 +12,14 @@ interface ListingsTableProps {
 }
 
 export function ListingsTable({ listings }: ListingsTableProps) {
+  const deleteMutation = useDeleteListing()
+
+  function handleDelete(listing: ListingSummary) {
+    if (window.confirm(`Supprimer definitivement "${listing.title}" ?`)) {
+      deleteMutation.mutate(listing.id)
+    }
+  }
+
   return (
     <div className="listings-table-wrapper">
       <table className="listings-table">
@@ -28,6 +37,7 @@ export function ListingsTable({ listings }: ListingsTableProps) {
             <th>Risque</th>
             <th>Source</th>
             <th>Detectee le</th>
+            <th aria-hidden="true"></th>
           </tr>
         </thead>
         <tbody>
@@ -69,6 +79,18 @@ export function ListingsTable({ listings }: ListingsTableProps) {
                 </td>
                 <td>{listing.source}</td>
                 <td>{formatDate(listing.firstSeenAt)}</td>
+                <td>
+                  <button
+                    type="button"
+                    className="listings-table-delete"
+                    onClick={() => handleDelete(listing)}
+                    disabled={deleteMutation.isPending}
+                    aria-label="Supprimer cette annonce"
+                    title="Pas interessant - supprimer"
+                  >
+                    ×
+                  </button>
+                </td>
               </tr>
             )
           })}

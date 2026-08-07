@@ -50,6 +50,16 @@ public interface IPropertyListingRepository
     void Update(PropertyListing listing);
 
     /// <summary>
+    /// Permanently removes a listing (and its price history/notifications,
+    /// cascade-configured). Note this doesn't blocklist the source
+    /// listing: if it's still live next time its source is collected, the
+    /// deduplication service (matching on Source+ExternalId or URL) will
+    /// re-create it as a "new" listing, since nothing records that it was
+    /// deliberately removed.
+    /// </summary>
+    void Remove(PropertyListing listing);
+
+    /// <summary>
     /// Appends a new price point to an already-tracked <paramref name="listing"/>
     /// (e.g. when a collected price differs from the last known one).
     /// Deliberately explicit rather than just `listing.PriceHistory.Add(entry)`:

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   useAnalyzeListing,
+  useDeleteListing,
   useListing,
   useMarkReviewed,
   usePriceHistory,
@@ -25,11 +26,13 @@ import './ListingDetailPage.css'
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { data: listing, isLoading, isError } = useListing(id)
   const { data: priceHistory } = usePriceHistory(id)
   const analyzeMutation = useAnalyzeListing(id ?? '')
   const updateMutation = useUpdateListing(id ?? '')
   const markReviewedMutation = useMarkReviewed(id ?? '')
+  const deleteMutation = useDeleteListing()
 
   const [notes, setNotes] = useState('')
   const [rent, setRent] = useState('')
@@ -60,6 +63,13 @@ export function ListingDetailPage() {
   async function handleAnalyze() {
     const response = await analyzeMutation.mutateAsync()
     setBreakdown(response.scoreBreakdown)
+  }
+
+  function handleDelete() {
+    if (!listing) return
+    if (window.confirm(`Supprimer definitivement "${listing.title}" ?`)) {
+      deleteMutation.mutate(listing.id, { onSuccess: () => navigate('/listings') })
+    }
   }
 
   const price = getDisplayPrice(listing.saleType, listing.askingPrice, listing.currentBid)
@@ -283,6 +293,14 @@ export function ListingDetailPage() {
               {listing.isReviewed
                 ? `Analyse le ${formatDateTime(listing.reviewedAt)}`
                 : 'Marquer comme analyse'}
+            </button>
+            <button
+              type="button"
+              className="listing-detail-delete-button"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Suppression...' : "Pas interessant - supprimer"}
             </button>
           </section>
 

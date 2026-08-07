@@ -1,9 +1,11 @@
+import type { MouseEvent } from 'react'
 import { Link } from 'react-router-dom'
 import type { ListingSummary } from '../../types'
 import { ScoreBadge } from '../Badge/ScoreBadge'
 import { RiskBadge } from '../Badge/RiskBadge'
 import { PebBadge } from '../Badge/PebBadge'
 import { formatArea, formatDate, formatPercent, getDisplayPrice } from '../../utils/format'
+import { useDeleteListing } from '../../hooks/useListings'
 import './PropertyCard.css'
 
 interface PropertyCardProps {
@@ -12,6 +14,15 @@ interface PropertyCardProps {
 
 export function PropertyCard({ listing }: PropertyCardProps) {
   const price = getDisplayPrice(listing.saleType, listing.askingPrice, listing.currentBid)
+  const deleteMutation = useDeleteListing()
+
+  function handleDelete(event: MouseEvent) {
+    event.preventDefault() // the whole card is a <Link>; don't navigate on delete
+    event.stopPropagation()
+    if (window.confirm(`Supprimer definitivement "${listing.title}" ?`)) {
+      deleteMutation.mutate(listing.id)
+    }
+  }
 
   return (
     <Link to={`/listings/${listing.id}`} className="property-card">
@@ -22,7 +33,19 @@ export function PropertyCard({ listing }: PropertyCardProps) {
       <div className="property-card-body">
         <div className="property-card-header">
           <span className="property-card-source">{listing.source}</span>
-          {!listing.isActive && <span className="property-card-inactive">Inactive</span>}
+          <div className="property-card-header-actions">
+            {!listing.isActive && <span className="property-card-inactive">Inactive</span>}
+            <button
+              type="button"
+              className="property-card-delete"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+              aria-label="Supprimer cette annonce"
+              title="Pas interessant - supprimer"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         <h3 className="property-card-title">{listing.title}</h3>

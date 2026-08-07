@@ -51,6 +51,32 @@
   padding: 0.1rem 0.5rem;
 }
 
+.property-card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.property-card-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.property-card-delete:hover {
+  background-color: var(--status-critical-soft, rgba(220, 38, 38, 0.1));
+  color: var(--status-critical);
+}
+
 .property-card-title {
   margin: 0;
   font-size: 1rem;

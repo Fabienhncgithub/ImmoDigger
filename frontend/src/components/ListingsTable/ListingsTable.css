@@ -66,3 +66,23 @@
   font-weight: 400;
   color: var(--color-text-muted);
 }
+
+.listings-table-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.listings-table-delete:hover {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: var(--status-critical);
+}
