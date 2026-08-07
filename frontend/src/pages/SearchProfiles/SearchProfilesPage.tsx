@@ -9,6 +9,7 @@ import {
 import { SearchProfileForm } from './SearchProfileForm'
 import { formatPercent, formatPrice } from '../../utils/format'
 import { searchProfileToListingFilters } from '../../utils/searchProfileFilters'
+import { toQueryString } from '../../api/client'
 import type { SearchProfile, SearchProfileRequest } from '../../types'
 import './SearchProfilesPage.css'
 
@@ -118,8 +119,7 @@ function ProfileCard({
 
       <Link
         className="search-profile-card-matches"
-        to="/listings"
-        state={{ filters: searchProfileToListingFilters(profile) }}
+        to={`/listings${toQueryString(searchProfileToListingFilters(profile))}`}
       >
         {profile.matchingListingsCount} annonce{profile.matchingListingsCount !== 1 ? 's' : ''} correspondante
         {profile.matchingListingsCount !== 1 ? 's' : ''} →

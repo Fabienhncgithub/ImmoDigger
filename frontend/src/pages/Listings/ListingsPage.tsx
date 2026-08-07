@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useListings } from '../../hooks/useListings'
 import { useSources } from '../../hooks/useSources'
 import { PropertyCard } from '../../components/PropertyCard/PropertyCard'
 import { ListingsTable } from '../../components/ListingsTable/ListingsTable'
 import { Pagination } from '../../components/Pagination/Pagination'
 import { CommuneMultiSelect } from '../../components/CommuneMultiSelect/CommuneMultiSelect'
+import { toQueryString } from '../../api/client'
 import type { ListingQueryParams } from '../../types'
 import './ListingsPage.css'
 
@@ -25,7 +26,13 @@ const PROPERTY_TYPE_OPTIONS = [
   { value: 'Warehouse', label: 'Entrepot' },
 ]
 
-/** "depuis N semaines" options for filters.firstSeenFrom - computed at pick time, not stored as a fixed date. */
+/**
+ * "depuis N semaines" options. The picked week count (not the resulting
+ * date) is what's persisted in the URL, as its own "weeks" param - the
+ * actual cutoff is recomputed relative to "now" every time the page loads,
+ * same as a real search would: "last 2 weeks" means 2 weeks before whenever
+ * you're looking, not frozen to the exact moment the filter was first set.
+ */
 const PERIOD_OPTIONS = [
   { label: 'Periode (toutes)', weeks: null },
   { label: '1 semaine', weeks: 1 },
@@ -40,23 +47,53 @@ function weeksAgoIso(weeks: number): string {
   return date.toISOString()
 }
 
+const ARRAY_KEYS = ['cities', 'postalCodes', 'propertyTypes'] as const
+const NUMBER_KEYS = ['minimumPrice', 'maximumPrice', 'minimumUnits', 'minimumScore'] as const
+const BOOLEAN_KEYS = ['isActive', 'hasGarage'] as const
+const STRING_KEYS = ['riskLevel', 'source', 'saleType', 'pebRating', 'searchText', 'sortBy'] as const
+
+/** Reconstructs filters (everything except the period, tracked separately - see PERIOD_OPTIONS) from the URL's query string. */
+function filtersFromSearchParams(params: URLSearchParams): ListingQueryParams {
+  const result: ListingQueryParams = {}
+
+  for (const key of ARRAY_KEYS) {
+    const values = params.getAll(key)
+    if (values.length > 0) result[key] = values
+  }
+  for (const key of NUMBER_KEYS) {
+    const value = params.get(key)
+    if (value) result[key] = Number(value)
+  }
+  for (const key of BOOLEAN_KEYS) {
+    const value = params.get(key)
+    if (value) result[key] = value === 'true'
+  }
+  for (const key of STRING_KEYS) {
+    const value = params.get(key)
+    if (value) result[key] = value
+  }
+
+  result.sortDescending = params.get('sortDescending') !== 'false'
+
+  return result
+}
+
 export function ListingsPage() {
   // A search profile's "voir les annonces correspondantes" link navigates
-  // here with its filters in router state (see searchProfileToListingFilters);
-  // the lazy initializer only runs once, so a filter changed afterwards
-  // isn't overwritten by a stale location.state on re-render.
-  const location = useLocation()
-  const [filters, setFilters] = useState<ListingQueryParams>(
-    () => (location.state as { filters?: ListingQueryParams } | null)?.filters ?? emptyFilters,
-  )
-  const [searchDraft, setSearchDraft] = useState('')
-  const [page, setPage] = useState(1)
+  // here with its filters already encoded in the URL (see
+  // searchProfileToListingFilters + toQueryString in SearchProfilesPage) -
+  // deliberately not via router navigation state, which the URL-sync
+  // effect below would otherwise wipe out before it could ever be read.
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const [filters, setFilters] = useState<ListingQueryParams>(() => {
+    const fromUrl = filtersFromSearchParams(searchParams)
+    return Object.keys(fromUrl).length > 0 ? { sortBy: 'firstSeenAt', sortDescending: true, ...fromUrl } : emptyFilters
+  })
+  const [searchDraft, setSearchDraft] = useState(filters.searchText ?? '')
+  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
-  // Tracked separately from filters.firstSeenFrom (a computed ISO timestamp)
-  // so the <select> has a stable value to match against instead of
-  // re-deriving "how many weeks ago" from a timestamp that drifts by the
-  // millisecond every time weeksAgoIso() is called.
-  const [periodWeeks, setPeriodWeeks] = useState<number | null>(null)
+  const [periodWeeks, setPeriodWeeks] = useState<number | null>(() => Number(searchParams.get('weeks')) || null)
 
   // Debounce free-text search so every keystroke doesn't trigger a request.
   useEffect(() => {
@@ -67,7 +104,17 @@ export function ListingsPage() {
     return () => clearTimeout(timeout)
   }, [searchDraft])
 
-  const { data, isLoading, isError } = useListings({ ...filters, page, pageSize: PAGE_SIZE })
+  // Keeps the URL in sync so filters (including the period) survive a
+  // refresh, a bookmark, or sharing the link - not just kept in memory.
+  useEffect(() => {
+    const firstSeenFrom = periodWeeks ? weeksAgoIso(periodWeeks) : undefined
+    const query = toQueryString({ ...filters, firstSeenFrom, weeks: periodWeeks ?? undefined, page })
+    setSearchParams(query.slice(1), { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, periodWeeks, page])
+
+  const firstSeenFrom = periodWeeks ? weeksAgoIso(periodWeeks) : undefined
+  const { data, isLoading, isError } = useListings({ ...filters, firstSeenFrom, page, pageSize: PAGE_SIZE })
   const { data: sources } = useSources()
 
   function updateFilter<K extends keyof ListingQueryParams>(key: K, value: ListingQueryParams[K]) {
@@ -84,7 +131,7 @@ export function ListingsPage() {
 
   function updatePeriod(weeks: number | null) {
     setPeriodWeeks(weeks)
-    updateFilter('firstSeenFrom', weeks ? weeksAgoIso(weeks) : undefined)
+    setPage(1)
   }
 
   function togglePropertyType(value: string) {
