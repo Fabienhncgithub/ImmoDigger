@@ -6,15 +6,21 @@ namespace ImmoDigger.Infrastructure.Persistence.DemoData;
 
 /// <summary>
 /// Seeds any baseline <see cref="ListingSource"/> rows that don't exist
-/// yet, matched by <see cref="ListingSource.Name"/> - not a one-shot
-/// "only if the table is empty" seed, so a source added to this list
-/// later (as the project grows) still shows up in a database that was
-/// already seeded, without needing a reset. Every row's
-/// <see cref="ListingSource.CollectionMethod"/> and
-/// <see cref="ListingSource.Allowed"/> record the actual compliance
-/// decision for that source - see each row's <see cref="ListingSource.Notes"/>
-/// for what was checked and why. <see cref="ListingSource.IsEnabled"/> only
-/// controls scheduling on top of that; it never overrides <c>Allowed</c>
+/// yet, matched by <see cref="ListingSource.Name"/>, and keeps the
+/// compliance-relevant fields of ones that already exist in sync with
+/// this list - not a one-shot "only if the table is empty" seed. That
+/// matters twice over: a source added to this list later still shows up
+/// in an already-seeded database, and a source whose vetting outcome
+/// changes (e.g. BpostImmo/ProximusRealEstate going from "not vetted" to
+/// "vetted and allowed" once a real collector existed for them) actually
+/// takes effect there too, without needing a reset. Only the compliance
+/// fields (<see cref="ListingSource.CollectionMethod"/>,
+/// <see cref="ListingSource.Allowed"/>, <see cref="ListingSource.BaseUrl"/>,
+/// <see cref="ListingSource.Notes"/>, the checked-at timestamps) are kept
+/// in sync this way; <see cref="ListingSource.IsEnabled"/> and the run-
+/// history fields are left alone once a row exists; they're runtime/user
+/// state, not something code should silently overwrite. IsEnabled only
+/// controls scheduling on top of Allowed anyway - it never overrides it
 /// (enforced centrally in <c>ListingCollectionBackgroundService</c>).
 ///
 /// Immoweb, Immovlan and Zimmo are <see cref="Domain.Common.CollectionMethod.Email"/>
@@ -29,9 +35,10 @@ public static class ReferenceDataSeeder
 {
     public static async Task SeedAsync(ImmoDiggerDbContext dbContext, CancellationToken cancellationToken = default)
     {
-        var existingNames = await dbContext.ListingSources.Select(s => s.Name).ToListAsync(cancellationToken);
+        var existing = await dbContext.ListingSources.ToDictionaryAsync(s => s.Name, cancellationToken);
 
         var checkedAt = new DateTime(2026, 8, 6, 0, 0, 0, DateTimeKind.Utc);
+        var recheckedAt = new DateTime(2026, 8, 9, 0, 0, 0, DateTimeKind.Utc);
 
         var baseline = new List<ListingSource>
         {
@@ -135,11 +142,12 @@ public static class ReferenceDataSeeder
                 // bpost periodically sells surplus post-office buildings.
                 Name = "BpostImmo",
                 BaseUrl = "https://bpostimmo.be/fr/a-vendre/",
-                IsEnabled = false,
-                CollectionMethod = CollectionMethod.Disabled,
-                Allowed = false,
-                RobotsCheckedAt = checkedAt,
-                Notes = "robots.txt permissive, no anti-bot protection found, but listing detail needs the same JS-bundle reverse-engineering effort as Biddit - not done yet. Legitimate future candidate.",
+                IsEnabled = true,
+                CollectionMethod = CollectionMethod.Html,
+                Allowed = true,
+                RobotsCheckedAt = recheckedAt,
+                TermsCheckedAt = recheckedAt,
+                Notes = "robots.txt permissive (only /backsite disallowed), no anti-bot protection, terms of use (checked at /fr/conditions-d-utilisation) have no scraping prohibition beyond a generic don't-harm-the-site clause. Listing pages embed a full JSON payload inline (Zabun platform, app.set(\"estateGroups\", ...)) - no separate detail-page fetches needed at all.",
                 PollingIntervalMinutes = 60,
             },
             new ListingSource
@@ -159,12 +167,19 @@ public static class ReferenceDataSeeder
             {
                 // Proximus is selling off >500 former telecom-exchange
                 // buildings through 2035 as it retires its copper network.
+                // Note: proximusrealestate.com ("ConnectImmo"), not
+                // proximusforrealestate.be - that similarly-named domain is
+                // a separate B2B fibre-for-developers marketing site with
+                // no listings at all. The original URL seeded here was
+                // wrong; corrected alongside vetting this collector.
                 Name = "ProximusRealEstate",
-                BaseUrl = "https://proximusforrealestate.be/fr/",
-                IsEnabled = false,
-                CollectionMethod = CollectionMethod.Disabled,
-                Allowed = false,
-                Notes = "URL verified real; no collector vetted/implemented yet.",
+                BaseUrl = "https://www.proximusrealestate.com/connectimmo/search.html",
+                IsEnabled = true,
+                CollectionMethod = CollectionMethod.Html,
+                Allowed = true,
+                RobotsCheckedAt = recheckedAt,
+                TermsCheckedAt = recheckedAt,
+                Notes = "robots.txt returns 404 (nothing disallowed), no anti-bot protection, no site-specific terms of use found prohibiting automated access (only Proximus's generic consumer-services legal page, not applicable to this B2B portal). Clean server-rendered HTML.",
                 PollingIntervalMinutes = 60,
             },
             new ListingSource
@@ -176,8 +191,8 @@ public static class ReferenceDataSeeder
                 IsEnabled = false,
                 CollectionMethod = CollectionMethod.Disabled,
                 Allowed = false,
-                RobotsCheckedAt = checkedAt,
-                Notes = "robots.txt permissive, no anti-bot protection, but markup is Elementor-based and too structurally inconsistent to parse reliably without more page-sampling. Legitimate future candidate.",
+                RobotsCheckedAt = recheckedAt,
+                Notes = "Re-checked: robots.txt still permissive, no anti-bot protection, but listing pages mix an already-sold \"Behaalde prijs\" (price achieved) figure with unrelated \"similar listings\" carousel widgets repeating several other prices with no reliable field distinguishing the current listing's real asking price from a past sale or a neighboring card. That's a correctness risk (could show a sold property as available at a stale price), not just a parsing inconvenience - staying excluded until a reliable field is found, not just \"not done yet\".",
                 PollingIntervalMinutes = 60,
             },
             new ListingSource
@@ -188,19 +203,32 @@ public static class ReferenceDataSeeder
                 IsEnabled = false,
                 CollectionMethod = CollectionMethod.Disabled,
                 Allowed = false,
-                RobotsCheckedAt = checkedAt,
-                Notes = "Cloudflare bot-fingerprinting on belgiantrain.be. Allowed=false permanently unless that changes.",
+                RobotsCheckedAt = recheckedAt,
+                Notes = "Re-checked: still an active Cloudflare challenge (cf-mitigated: challenge, HTTP 403) on belgiantrain.be. Allowed=false permanently unless that changes.",
                 PollingIntervalMinutes = 60,
             },
         };
 
-        var missing = baseline.Where(s => !existingNames.Contains(s.Name)).ToList();
-        if (missing.Count == 0)
+        foreach (var source in baseline)
         {
-            return;
+            if (existing.TryGetValue(source.Name, out var current))
+            {
+                current.BaseUrl = source.BaseUrl;
+                current.CollectionMethod = source.CollectionMethod;
+                current.Allowed = source.Allowed;
+                current.Notes = source.Notes;
+                current.RobotsCheckedAt = source.RobotsCheckedAt;
+                current.TermsCheckedAt = source.TermsCheckedAt;
+                // IsEnabled, PollingIntervalMinutes and the run-history
+                // fields are deliberately left untouched - runtime/user
+                // state, not code-owned.
+            }
+            else
+            {
+                dbContext.ListingSources.Add(source);
+            }
         }
 
-        dbContext.ListingSources.AddRange(missing);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

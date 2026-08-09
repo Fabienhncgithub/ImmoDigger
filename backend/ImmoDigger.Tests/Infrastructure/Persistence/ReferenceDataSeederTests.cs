@@ -82,13 +82,13 @@ public class ReferenceDataSeederTests
     }
 
     [Fact]
-    public async Task SeedAsync_DisablesInstitutionalSourcesWithoutAVettedCollector()
+    public async Task SeedAsync_EnablesInstitutionalSourcesWithAVettedCollector_KeepsTheRestDisabled()
     {
-        // RegieDesBatiments now has a real, vetted collector (clean
-        // server-rendered HTML, no anti-bot protection - see its class doc
-        // comment) so it is the one institutional source seeded enabled.
-        // The rest still have no collector implemented and must never come
-        // up enabled.
+        // RegieDesBatiments, BpostImmo and ProximusRealEstate now have real,
+        // vetted collectors (see each collector's class doc comment) so
+        // they're seeded enabled; VlaamseOverheidVastgoed (unreliable price
+        // field) and SncbImmo (Cloudflare) still have none and must never
+        // come up enabled.
         await using var dbContext = TestDbContextFactory.Create();
 
         await ReferenceDataSeeder.SeedAsync(dbContext);
@@ -98,11 +98,43 @@ public class ReferenceDataSeederTests
             .ToListAsync();
 
         Assert.Equal(5, institutional.Count);
-        Assert.All(institutional.Where(s => s.Name != "RegieDesBatiments"), s => Assert.False(s.IsEnabled));
 
-        var regieDesBatiments = institutional.Single(s => s.Name == "RegieDesBatiments");
-        Assert.True(regieDesBatiments.IsEnabled);
-        Assert.True(regieDesBatiments.Allowed);
+        var vetted = new[] { "BpostImmo", "RegieDesBatiments", "ProximusRealEstate" };
+        Assert.All(institutional.Where(s => vetted.Contains(s.Name)), s =>
+        {
+            Assert.True(s.IsEnabled, $"{s.Name} should be enabled");
+            Assert.True(s.Allowed, $"{s.Name} should be allowed");
+        });
+        Assert.All(institutional.Where(s => !vetted.Contains(s.Name)), s =>
+        {
+            Assert.False(s.IsEnabled, $"{s.Name} should stay disabled");
+            Assert.False(s.Allowed, $"{s.Name} should stay not-allowed");
+        });
+    }
+
+    [Fact]
+    public async Task SeedAsync_UpdatesComplianceFields_ForAnAlreadySeededSource_WithoutTouchingIsEnabled()
+    {
+        // Simulates a source whose vetting outcome changed after a user's
+        // database was already seeded (e.g. BpostImmo going from
+        // "not vetted" to "vetted and allowed" once a collector existed):
+        // re-seeding must pick up the new Allowed/CollectionMethod/Notes,
+        // but must never silently flip a user's own IsEnabled choice.
+        await using var dbContext = TestDbContextFactory.Create();
+        await ReferenceDataSeeder.SeedAsync(dbContext);
+
+        var bpostImmo = await dbContext.ListingSources.SingleAsync(s => s.Name == "BpostImmo");
+        bpostImmo.Allowed = false;
+        bpostImmo.CollectionMethod = ImmoDigger.Domain.Common.CollectionMethod.Disabled;
+        bpostImmo.IsEnabled = false; // simulates the user having disabled it manually
+        await dbContext.SaveChangesAsync();
+
+        await ReferenceDataSeeder.SeedAsync(dbContext);
+
+        var reloaded = await dbContext.ListingSources.SingleAsync(s => s.Name == "BpostImmo");
+        Assert.True(reloaded.Allowed);
+        Assert.Equal(ImmoDigger.Domain.Common.CollectionMethod.Html, reloaded.CollectionMethod);
+        Assert.False(reloaded.IsEnabled); // untouched, even though the baseline says true
     }
 
     [Fact]

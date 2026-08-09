@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr-BE">
+<head><title>bpost immo - A vendre</title></head>
+<body>
+<script>
+    app.set("estateGroups", [{"key":"","id":null,"estates":[
+        {
+            "locale":"fr",
+            "id":"9990001",
+            "uri":"/fr/offre/9990001/batiment-fictif-a-vendre-a-1050-ixelles",
+            "status":{"id":1,"name":{"fr":"A vendre","nl":"Te koop"}},
+            "estate":{
+                "general":{
+                    "title":{"fr":"BATIMENT FICTIF DE TEST A VENDRE","nl":"FICTIEF TESTGEBOUW TE KOOP"},
+                    "description":{"fr":"Description fictive de test.","nl":""},
+                    "subType":{"fr":"Batiment mixte","nl":"Gemengd gebouw"},
+                    "price":{"visible":true,"value":610000,"priceFrom":true,"period":null,"currency":"","totalPrice":610000},
+                    "address":{"visible":true,"street":{"fr":"Rue de Test","nl":"Teststraat"},"number":"12","city":{"id":1,"zip":"1050","name":"Ixelles","alias":{}}}
+                },
+                "dimensions":{"areaGround":150,"areaBuild":420,"widthHouse":0},
+                "energy":{"epbReference":"","epcReference":"","customEpcLabel":null,"epcValueTotal":0,"energyReference":"","energyLabel":"epc_e"},
+                "pictures":[{"file":"https://example-test.invalid/bpost/9990001-cover.jpg","thumbnail":"https://example-test.invalid/bpost/9990001-thumb.jpg","comment":{},"index":1,"type":undefined}]
+            }
+        },
+        {
+            "locale":"fr",
+            "id":"9990002",
+            "uri":"/fr/offre/9990002/batiment-fictif-a-vendre-a-6040-jumet",
+            "status":{"id":1,"name":{"fr":"A vendre","nl":"Te koop"}},
+            "estate":{
+                "general":{
+                    "title":{"fr":"BATIMENT FICTIF HORS ZONE","nl":""},
+                    "description":{"fr":"Hors zone cible.","nl":""},
+                    "subType":{"fr":"Entrepot","nl":"Magazijn"},
+                    "price":{"visible":true,"value":250000,"priceFrom":false,"period":null,"currency":"","totalPrice":250000},
+                    "address":{"visible":true,"street":{"fr":"Rue Hors Zone","nl":""},"number":"1","city":{"id":2,"zip":"6040","name":"Jumet","alias":{}}}
+                },
+                "dimensions":{"areaGround":300,"areaBuild":300},
+                "energy":{"energyLabel":"epc_c"},
+                "pictures":[]
+            }
+        },
+        {
+            "locale":"fr",
+            "id":"9990003",
+            "uri":"/fr/offre/9990003/bureaux-fictifs-a-louer-a-1000-bruxelles",
+            "status":{"id":2,"name":{"fr":"A louer","nl":"Te huur"}},
+            "estate":{
+                "general":{
+                    "title":{"fr":"BUREAUX FICTIFS A LOUER","nl":""},
+                    "description":{"fr":"Location, doit etre ignoree.","nl":""},
+                    "subType":{"fr":"Bureau","nl":"Kantoor"},
+                    "price":{"visible":true,"value":1500,"priceFrom":false,"period":"monthly","currency":"","totalPrice":1500},
+                    "address":{"visible":true,"street":{"fr":"Rue de la Location","nl":""},"number":"5","city":{"id":3,"zip":"1000","name":"Bruxelles","alias":{}}}
+                },
+                "dimensions":{"areaGround":0,"areaBuild":200},
+                "energy":{"energyLabel":"epc_d"},
+                "pictures":[]
+            }
+        }
+    ]}]);
+</script>
+</body>
+</html>

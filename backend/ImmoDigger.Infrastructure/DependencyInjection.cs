@@ -2,6 +2,8 @@ using ImmoDigger.Application.Interfaces;
 using ImmoDigger.Infrastructure.BackgroundServices;
 using ImmoDigger.Infrastructure.Collectors;
 using ImmoDigger.Infrastructure.Collectors.Biddit;
+using ImmoDigger.Infrastructure.Collectors.BpostImmo;
+using ImmoDigger.Infrastructure.Collectors.ProximusRealEstate;
 using ImmoDigger.Infrastructure.Collectors.RegieDesBatiments;
 using ImmoDigger.Infrastructure.EmailImport;
 using ImmoDigger.Infrastructure.EmailImport.Parsers;
@@ -80,13 +82,52 @@ public static class DependencyInjection
         });
         services.AddScoped<IListingCollector, RegieDesBatimentsCollector>();
 
-        // Email-import pipeline (Immoweb/Immovlan/Zimmo/agencies): never
-        // touches those sites directly, only parses alert emails already
-        // sitting in the user's own inbox. IEmailInbox is a no-op
-        // placeholder until real mailbox credentials are configured - see
-        // NullEmailInbox's doc comment. Agency-specific parsers are added
-        // by registering more AgencyEmailParser instances, not new files.
-        services.AddScoped<IEmailInbox, NullEmailInbox>();
+        // BpostImmo and ProximusRealEstate were vetted the same way (see
+        // each collector's class doc comment): permissive robots.txt, no
+        // anti-bot protection, no scraping prohibition in reachable terms
+        // of use. VlaamseOverheidVastgoed and SncbImmo were checked again
+        // and stay excluded - the former mixes already-sold "behaalde
+        // prijs" figures into the same widgets as active listings with no
+        // reliable field to tell them apart (a correctness risk, not just
+        // a parsing inconvenience), the latter still sits behind an active
+        // Cloudflare challenge.
+        services.AddHttpClient(BpostImmoCollector.HttpClientName, client =>
+        {
+            client.BaseAddress = new Uri("https://bpostimmo.be");
+            client.Timeout = TimeSpan.FromSeconds(15);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(CollectorConstants.UserAgent);
+        });
+        services.AddScoped<IListingCollector, BpostImmoCollector>();
+
+        services.AddHttpClient(ProximusRealEstateCollector.HttpClientName, client =>
+        {
+            client.BaseAddress = new Uri("https://www.proximusrealestate.com");
+            client.Timeout = TimeSpan.FromSeconds(15);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(CollectorConstants.UserAgent);
+        });
+        services.AddScoped<IListingCollector, ProximusRealEstateCollector>();
+
+        // Email-import pipeline (Immoweb/Immovlan/Zimmo/2ememain/agencies):
+        // never touches those sites directly, only parses alert emails
+        // already sitting in the user's own inbox. Falls back to the
+        // no-op NullEmailInbox when no mailbox is configured (Imap:Host
+        // unset) - the app runs fine either way, it just imports nothing
+        // by this route until real credentials are set (user-secrets/
+        // Imap__Host etc., same pattern as ConnectionStrings:Postgres -
+        // see ImapSettings's doc comment). Agency-specific parsers are
+        // added by registering more AgencyEmailParser instances, not new
+        // files.
+        var imapHost = configuration[$"{ImapSettings.SectionName}:Host"];
+        if (!string.IsNullOrWhiteSpace(imapHost))
+        {
+            services.Configure<ImapSettings>(configuration.GetSection(ImapSettings.SectionName));
+            services.AddScoped<IEmailInbox, ImapEmailInbox>();
+        }
+        else
+        {
+            services.AddScoped<IEmailInbox, NullEmailInbox>();
+        }
+
         services.AddScoped<IEmailListingParser, ImmowebEmailParser>();
         services.AddScoped<IEmailListingParser, ImmovlanEmailParser>();
         services.AddScoped<IEmailListingParser, ZimmoEmailParser>();
