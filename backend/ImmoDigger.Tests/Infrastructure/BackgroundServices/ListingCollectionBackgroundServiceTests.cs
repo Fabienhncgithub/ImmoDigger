@@ -1,3 +1,4 @@
+using ImmoDigger.Application.DTOs;
 using ImmoDigger.Application.Interfaces;
 using ImmoDigger.Application.Services;
 using ImmoDigger.Domain.Entities;
@@ -28,6 +29,7 @@ public class ListingCollectionBackgroundServiceTests
         services.AddScoped<IListingSourceRepository, ListingSourceRepository>();
         services.AddScoped<IPropertyListingRepository, PropertyListingRepository>();
         services.AddScoped<IListingDeduplicationService, ListingDeduplicationService>();
+        services.AddScoped<IInvestmentAnalysisService, InvestmentAnalysisService>();
 
         foreach (var collector in collectors)
         {
@@ -91,6 +93,93 @@ public class ListingCollectionBackgroundServiceTests
         var reloaded = await ReloadAsync(provider, source.Id);
         Assert.NotNull(reloaded.LastSuccessfulRunAt);
         Assert.Null(reloaded.LastError);
+    }
+
+    [Fact]
+    public async Task RunCollectionCycleAsync_AnalyzesANewlyCollectedListing_WithoutWaitingForAManualRequest()
+    {
+        var collected = new CollectedListing
+        {
+            Source = "Analyzed",
+            ExternalId = "ext-1",
+            Url = "https://example.invalid/listing/1",
+            Title = "Immeuble de rapport fictif",
+            AskingPrice = 400_000m,
+            OfficialUnitCount = 4,
+            LivingArea = 320m,
+            PostalCode = "1180",
+            City = "Uccle",
+            SaleType = "RegularSale",
+            PropertyType = "IncomeBuilding",
+            RawContentHash = "hash-1",
+        };
+        var collector = new FixedResultTestCollector("Analyzed", collected);
+        using var provider = BuildProvider([collector]);
+        await SeedSourceAsync(provider, "Analyzed");
+        var sut = CreateSut(provider);
+
+        await sut.RunCollectionCycleAsync(CancellationToken.None);
+
+        using var scope = provider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ImmoDiggerDbContext>();
+        var listing = await dbContext.PropertyListings.SingleAsync(l => l.Source == "Analyzed");
+        Assert.NotNull(listing.OpportunityScore);
+        Assert.NotNull(listing.RiskLevel);
+    }
+
+    [Fact]
+    public async Task RunCollectionCycleAsync_AnalyzesAnUnchangedListing_IfItWasNeverAnalyzedBefore()
+    {
+        // Simulates a listing collected before auto-analysis existed: it
+        // comes back "Unchanged" (nothing about it actually changed) but
+        // still has no score - the cycle should catch it up rather than
+        // leaving it blank forever until something about it happens to change.
+        var collected = new CollectedListing
+        {
+            Source = "Backfill",
+            ExternalId = "ext-2",
+            Url = "https://example.invalid/listing/2",
+            Title = "Immeuble deja vu, jamais analyse",
+            AskingPrice = 350_000m,
+            OfficialUnitCount = 3,
+            PostalCode = "1060",
+            City = "Saint-Gilles",
+            SaleType = "RegularSale",
+            PropertyType = "IncomeBuilding",
+            RawContentHash = "hash-2",
+        };
+        var collector = new FixedResultTestCollector("Backfill", collected);
+        using var provider = BuildProvider([collector]);
+        await SeedSourceAsync(provider, "Backfill");
+
+        // First cycle creates the listing (and analyzes it, per the test
+        // above) - reset its score afterwards to simulate one that
+        // predates auto-analysis, then run a second cycle where the
+        // collector reports the exact same content (-> Unchanged).
+        await CreateSut(provider).RunCollectionCycleAsync(CancellationToken.None);
+        using (var resetScope = provider.CreateScope())
+        {
+            var dbContext = resetScope.ServiceProvider.GetRequiredService<ImmoDiggerDbContext>();
+            var listing = await dbContext.PropertyListings.SingleAsync(l => l.Source == "Backfill");
+            listing.OpportunityScore = null;
+            listing.RiskLevel = null;
+
+            // Also rewind the source's last-run so the second cycle below
+            // considers it due again (SeedSourceAsync's default 15-minute
+            // interval would otherwise skip it, since the first cycle just
+            // ran moments ago).
+            var source = await dbContext.ListingSources.SingleAsync(s => s.Name == "Backfill");
+            source.LastSuccessfulRunAt = DateTime.UtcNow.AddHours(-1);
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        await CreateSut(provider).RunCollectionCycleAsync(CancellationToken.None);
+
+        using var scope = provider.CreateScope();
+        var reloadedContext = scope.ServiceProvider.GetRequiredService<ImmoDiggerDbContext>();
+        var reloadedListing = await reloadedContext.PropertyListings.SingleAsync(l => l.Source == "Backfill");
+        Assert.NotNull(reloadedListing.OpportunityScore);
     }
 
     [Fact]

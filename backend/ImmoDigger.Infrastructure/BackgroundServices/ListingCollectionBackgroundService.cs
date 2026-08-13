@@ -105,6 +105,7 @@ public class ListingCollectionBackgroundService(
             using var scope = scopeFactory.CreateScope();
             var sourceRepository = scope.ServiceProvider.GetRequiredService<IListingSourceRepository>();
             var deduplicationService = scope.ServiceProvider.GetRequiredService<IListingDeduplicationService>();
+            var analysisService = scope.ServiceProvider.GetRequiredService<IInvestmentAnalysisService>();
             var collectors = scope.ServiceProvider.GetServices<IListingCollector>();
 
             var source = await sourceRepository.GetByIdAsync(sourceId, cancellationToken);
@@ -145,6 +146,28 @@ public class ListingCollectionBackgroundService(
                 foreach (var item in collected)
                 {
                     var outcome = await deduplicationService.ProcessAsync(item, cancellationToken);
+
+                    // Score/risk are computed right away rather than only
+                    // on demand from the UI: otherwise every freshly-
+                    // collected listing would sit with a blank score until
+                    // a user happened to open it and click "Analyser",
+                    // which defeats the point of surfacing opportunities
+                    // automatically. Re-run on every update too (not just
+                    // "new"), since a price or PEB change can change the
+                    // outcome - but for an unchanged listing, only if it
+                    // was never analyzed in the first place (e.g. collected
+                    // before this behavior existed): re-scoring a stable,
+                    // already-analyzed listing every single cycle would be
+                    // pure waste. EstimatedGrossYield still depends on
+                    // manual rent-estimate inputs the user hasn't filled in
+                    // yet, so it stays null until they do - only the risk
+                    // assessment and opportunity score benefit here.
+                    var needsAnalysis = outcome.Result is DeduplicationResult.NewListing or DeduplicationResult.ExistingListingUpdated
+                        || (outcome.Result == DeduplicationResult.Unchanged && outcome.Listing?.OpportunityScore is null);
+                    if (outcome.Listing is not null && needsAnalysis)
+                    {
+                        analysisService.Analyze(outcome.Listing);
+                    }
 
                     switch (outcome.Result)
                     {

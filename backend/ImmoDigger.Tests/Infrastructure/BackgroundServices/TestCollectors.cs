@@ -17,6 +17,15 @@ internal sealed class RecordingTestCollector(string sourceName) : IListingCollec
     }
 }
 
+/// <summary>Always returns the same single listing - used to test that the background service analyzes what it collects.</summary>
+internal sealed class FixedResultTestCollector(string sourceName, CollectedListing listing) : IListingCollector
+{
+    public string SourceName => sourceName;
+
+    public Task<IReadOnlyCollection<CollectedListing>> CollectAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyCollection<CollectedListing>>([listing]);
+}
+
 /// <summary>Always throws, to test that the background service isolates collector failures.</summary>
 internal sealed class ThrowingTestCollector(string sourceName) : IListingCollector
 {
