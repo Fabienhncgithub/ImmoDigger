@@ -1,7 +1,7 @@
 import { useDashboardSummary } from '../../hooks/useDashboard'
 import { StatTile } from '../../components/StatTile/StatTile'
 import { PropertyCard } from '../../components/PropertyCard/PropertyCard'
-import { formatPercent, formatPrice } from '../../utils/format'
+import { formatPrice, formatScore } from '../../utils/format'
 import './DashboardPage.css'
 
 export function DashboardPage() {
@@ -25,7 +25,7 @@ export function DashboardPage() {
             <StatTile label="Nouvelles annonces aujourd'hui" value={String(summary.newListingsToday)} />
             <StatTile label="Annonces actives" value={String(summary.activeListingsCount)} />
             <StatTile label="Prix moyen" value={formatPrice(summary.averagePrice)} />
-            <StatTile label="Score moyen" value={formatPercent(summary.averageScore, 0)} />
+            <StatTile label="Score moyen" value={formatScore(summary.averageScore)} />
             <StatTile
               label="Opportunites fortes"
               value={String(summary.strongOpportunitiesCount)}

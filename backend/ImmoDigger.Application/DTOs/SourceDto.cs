@@ -1,3 +1,5 @@
+using ImmoDigger.Domain.Common;
+
 namespace ImmoDigger.Application.DTOs;
 
 public sealed record SourceDto(
@@ -5,6 +7,15 @@ public sealed record SourceDto(
     string Name,
     string BaseUrl,
     bool IsEnabled,
+    /// <summary>
+    /// The hard compliance gate, independent of <see cref="IsEnabled"/> -
+    /// see <see cref="Domain.Entities.ListingSource.Allowed"/>. Surfaced so
+    /// the UI can explain why an "Activee" source never actually collects
+    /// anything, instead of leaving that invisible.
+    /// </summary>
+    bool Allowed,
+    CollectionMethod CollectionMethod,
+    string? Notes,
     int PollingIntervalMinutes,
     DateTime? LastSuccessfulRunAt,
     DateTime? LastFailedRunAt,

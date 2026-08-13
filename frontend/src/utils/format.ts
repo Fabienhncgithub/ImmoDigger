@@ -30,6 +30,11 @@ export function formatPercent(value: number | null, fractionDigits = 1): string 
   return value === null ? '—' : `${value.toFixed(fractionDigits)} %`
 }
 
+/** The opportunity score is out of 100 points, not a percentage - matches ScoreBadge's "N/100" format. */
+export function formatScore(value: number | null): string {
+  return value === null ? '—' : `${Math.round(value)}/100`
+}
+
 export function formatDate(value: string | null): string {
   return value ? dateFormatter.format(new Date(value)) : '—'
 }

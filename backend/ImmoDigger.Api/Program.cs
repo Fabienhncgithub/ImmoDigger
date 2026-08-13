@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using ImmoDigger.Application;
 using ImmoDigger.Infrastructure;
 using ImmoDigger.Infrastructure.Persistence;
@@ -10,7 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    // Enums (e.g. SourceDto.CollectionMethod) serialize as their string
+    // name rather than a raw ordinal - readable in responses/logs, and
+    // stable if enum members are ever reordered.
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 

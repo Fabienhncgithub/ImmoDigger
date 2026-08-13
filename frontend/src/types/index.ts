@@ -163,6 +163,10 @@ export interface Source {
   name: string
   baseUrl: string
   isEnabled: boolean
+  /** The hard compliance gate, independent of isEnabled - see ListingSource.Allowed on the backend. */
+  allowed: boolean
+  collectionMethod: 'Api' | 'Rss' | 'PublicFeed' | 'Html' | 'Email' | 'Manual' | 'Disabled'
+  notes: string | null
   pollingIntervalMinutes: number
   lastSuccessfulRunAt: string | null
   lastFailedRunAt: string | null

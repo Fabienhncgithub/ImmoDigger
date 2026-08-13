@@ -42,6 +42,16 @@ export function SourcesPage() {
   )
 }
 
+const COLLECTION_METHOD_LABELS: Record<Source['collectionMethod'], string> = {
+  Api: 'API',
+  Rss: 'RSS',
+  PublicFeed: 'Flux public',
+  Html: 'Page HTML',
+  Email: 'Emails d’alerte',
+  Manual: 'Import manuel',
+  Disabled: 'Aucune',
+}
+
 function SourceRow({ source, onToggle }: { source: Source; onToggle: (isEnabled: boolean) => void }) {
   return (
     <div className="source-row">
@@ -50,11 +60,28 @@ function SourceRow({ source, onToggle }: { source: Source; onToggle: (isEnabled:
           <h2>{source.name}</h2>
           <p className="source-row-url">{source.baseUrl}</p>
         </div>
-        <label className="source-row-toggle">
-          <input type="checkbox" checked={source.isEnabled} onChange={(e) => onToggle(e.target.checked)} />
-          {source.isEnabled ? 'Activee' : 'Desactivee'}
-        </label>
+        <div className="source-row-status">
+          <span className="source-row-method">
+            <span
+              className={`source-row-method-dot source-row-method-dot--${source.allowed ? 'good' : 'critical'}`}
+              aria-hidden="true"
+            />
+            {COLLECTION_METHOD_LABELS[source.collectionMethod]}
+            {!source.allowed && ' (non autorisee)'}
+          </span>
+          <label className="source-row-toggle">
+            <input type="checkbox" checked={source.isEnabled} onChange={(e) => onToggle(e.target.checked)} />
+            {source.isEnabled ? 'Activee' : 'Desactivee'}
+          </label>
+        </div>
       </div>
+
+      {source.isEnabled && !source.allowed && (
+        <p className="source-row-blocked-warning">
+          Activee mais ne collectera jamais rien : cette source n'est pas autorisee (scraping direct interdit ou
+          bloque techniquement). Voir la note ci-dessous.
+        </p>
+      )}
 
       <dl className="source-row-facts">
         <div>
@@ -75,6 +102,7 @@ function SourceRow({ source, onToggle }: { source: Source; onToggle: (isEnabled:
         </div>
       </dl>
 
+      {source.notes && <p className="source-row-notes">{source.notes}</p>}
       {source.lastError && <p className="source-row-error">{source.lastError}</p>}
     </div>
   )
