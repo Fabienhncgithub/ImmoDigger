@@ -49,9 +49,13 @@ export function formatSaleType(saleType: string): string {
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   IncomeBuilding: 'Immeuble de rapport',
-  ApartmentBuilding: 'Immeuble a appartements',
   House: 'Maison',
+  Apartment: 'Appartement',
   Warehouse: 'Entrepot',
+  Office: 'Bureau',
+  Land: 'Terrain',
+  Garage: 'Garage',
+  Other: 'Autre',
 }
 
 export function formatPropertyType(propertyType: string): string {

@@ -40,7 +40,7 @@ public class PropertyListing
     /// <summary>e.g. "RegularSale", "PublicSale". Kept as free text: each source has its own vocabulary.</summary>
     public required string SaleType { get; set; }
 
-    /// <summary>e.g. "IncomeBuilding", "ApartmentBuilding", "House". Free text for the same reason as <see cref="SaleType"/>.</summary>
+    /// <summary>e.g. "IncomeBuilding", "House", "Apartment", "Warehouse", "Office", "Land", "Garage", "Other". Free text for the same reason as <see cref="SaleType"/>.</summary>
     public required string PropertyType { get; set; }
 
     public int? BedroomCount { get; set; }

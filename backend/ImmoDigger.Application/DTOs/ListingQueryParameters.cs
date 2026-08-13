@@ -15,7 +15,7 @@ public sealed record ListingQueryParameters
 
     /// <summary>
     /// Matches any of the given property types (e.g. "IncomeBuilding",
-    /// "ApartmentBuilding"). Not in the original filter list, but needed:
+    /// "Warehouse"). Not in the original filter list, but needed:
     /// without it there is no way to search specifically for immeubles/
     /// maisons de rapport.
     /// </summary>

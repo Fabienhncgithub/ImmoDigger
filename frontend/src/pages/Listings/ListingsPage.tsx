@@ -19,11 +19,19 @@ const emptyFilters: ListingQueryParams = {
   sortDescending: true,
 }
 
+// Matches the real vocabulary the collectors actually produce (see
+// PropertyListing.PropertyType's doc comment) - "ApartmentBuilding" used
+// to be offered here but no real collector has ever emitted it (only the
+// fictional demo data did, since fixed to "IncomeBuilding"), so picking
+// it silently filtered to nothing.
 const PROPERTY_TYPE_OPTIONS = [
   { value: 'IncomeBuilding', label: 'Immeuble de rapport' },
-  { value: 'ApartmentBuilding', label: 'Immeuble a appartements' },
   { value: 'House', label: 'Maison' },
+  { value: 'Apartment', label: 'Appartement' },
   { value: 'Warehouse', label: 'Entrepot' },
+  { value: 'Office', label: 'Bureau' },
+  { value: 'Land', label: 'Terrain' },
+  { value: 'Garage', label: 'Garage' },
 ]
 
 /**

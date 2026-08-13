@@ -10,11 +10,15 @@ interface SearchProfileFormProps {
   isSubmitting: boolean
 }
 
+// Kept in sync with ListingsPage's PROPERTY_TYPE_OPTIONS - see its comment.
 const PROPERTY_TYPE_OPTIONS = [
   { value: 'IncomeBuilding', label: 'Immeuble de rapport' },
-  { value: 'ApartmentBuilding', label: 'Immeuble a appartements' },
   { value: 'House', label: 'Maison' },
+  { value: 'Apartment', label: 'Appartement' },
   { value: 'Warehouse', label: 'Entrepot' },
+  { value: 'Office', label: 'Bureau' },
+  { value: 'Land', label: 'Terrain' },
+  { value: 'Garage', label: 'Garage' },
 ]
 
 export function SearchProfileForm({ initial, onSubmit, onCancel, isSubmitting }: SearchProfileFormProps) {
