@@ -112,8 +112,13 @@ public partial class BpostImmoCollector(IHttpClientFactory httpClientFactory, IL
         var street = address?.Street?.Fr ?? string.Empty;
         var fullAddress = string.Join(' ', new[] { street, address?.Number }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
-        var title = HtmlEntity.DeEntitize(wrapper.Estate?.General?.Title?.Fr) ?? "Bien immobilier";
-        var description = HtmlEntity.DeEntitize(wrapper.Estate?.General?.Description?.Fr) ?? string.Empty;
+        var title = HtmlEntity.DeEntitize(wrapper.Estate?.General?.Title?.Fr ?? string.Empty);
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            title = "Bien immobilier";
+        }
+
+        var description = HtmlEntity.DeEntitize(wrapper.Estate?.General?.Description?.Fr ?? string.Empty);
         var price = wrapper.Estate?.General?.Price?.Value;
         var image = wrapper.Estate?.Pictures?.FirstOrDefault()?.File;
 

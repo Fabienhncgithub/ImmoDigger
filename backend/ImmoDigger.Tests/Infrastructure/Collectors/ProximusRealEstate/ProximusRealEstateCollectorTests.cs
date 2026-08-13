@@ -26,6 +26,28 @@ public class ProximusRealEstateCollectorTests
     }
 
     [Fact]
+    public void ToCollectedListing_InfersLand_WhenThereIsOnlyLandSurfaceAndNoBuildingSurface()
+    {
+        var candidates = ProximusRealEstateCollector.ParseSearchResults(ReadFixture("search.html"));
+        var candidate = Assert.Single(candidates) with { LivingArea = null };
+
+        var listing = candidate.ToCollectedListing(price: null);
+
+        Assert.Equal("Land", listing.PropertyType);
+    }
+
+    [Fact]
+    public void ToCollectedListing_FallsBackToOther_WhenABuildingSurfaceIsPresent()
+    {
+        var candidates = ProximusRealEstateCollector.ParseSearchResults(ReadFixture("search.html"));
+        var candidate = Assert.Single(candidates);
+
+        var listing = candidate.ToCollectedListing(price: null);
+
+        Assert.Equal("Other", listing.PropertyType); // has both land (820) and building (1450) surface - no confident type either way
+    }
+
+    [Fact]
     public void ParseSalesPrice_ParsesACommaFormattedPrice()
     {
         var price = ProximusRealEstateCollector.ParseSalesPrice(ReadFixture("detail-99TST.html"));

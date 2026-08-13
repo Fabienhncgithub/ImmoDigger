@@ -111,11 +111,23 @@ public partial class ProximusRealEstateCollector(
             City = City,
             AskingPrice = price,
             SaleType = "RegularSale",
-            PropertyType = "Other", // the search page doesn't expose a property type/subtype field
+            PropertyType = InferPropertyType(LandArea, LivingArea),
             LandArea = LandArea,
             LivingArea = LivingArea,
             RawContentHash = ComputeContentHash(Title, Address, price),
         };
+
+        /// <summary>
+        /// Neither the search cards nor the detail page's "Destination"
+        /// field (always "N/A" on every listing sampled while building
+        /// this collector) give a real property-type signal, so this only
+        /// makes the one distinction the surface figures can actually
+        /// support: no building surface at all (just land) is a plot of
+        /// land; everything else stays "Other" rather than guessing a
+        /// specific building type with nothing to base it on.
+        /// </summary>
+        private static string InferPropertyType(decimal? landArea, decimal? livingArea) =>
+            landArea is > 0 && livingArea is null or 0 ? "Land" : "Other";
     }
 
     internal static List<Candidate> ParseSearchResults(string html)
@@ -150,7 +162,7 @@ public partial class ProximusRealEstateCollector(
                 continue;
             }
 
-            var addressText = HtmlEntity.DeEntitize(link!.SelectSingleNode(".//h2")?.InnerText?.Trim()) ?? string.Empty;
+            var addressText = HtmlEntity.DeEntitize(link!.SelectSingleNode(".//h2")?.InnerText?.Trim() ?? string.Empty);
             var addressMatch = AddressPattern().Match(addressText);
             if (!addressMatch.Success)
             {
