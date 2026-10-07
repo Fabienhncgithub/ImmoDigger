@@ -56,9 +56,29 @@ public class PropertyListingRepository(ImmoDiggerDbContext dbContext) : IPropert
             query = query.Where(l => l.OpportunityScore >= parameters.MinimumScore);
         }
 
+        if (parameters.MinimumGrossYield.HasValue)
+        {
+            query = query.Where(l => l.EstimatedGrossYield >= parameters.MinimumGrossYield);
+        }
+
+        if (parameters.MinimumLivingArea.HasValue)
+        {
+            query = query.Where(l => l.LivingArea >= parameters.MinimumLivingArea);
+        }
+
+        if (parameters.IncludePublicSales == false)
+        {
+            query = query.Where(l => l.SaleType != "PublicSale");
+        }
+
         if (!string.IsNullOrWhiteSpace(parameters.RiskLevel))
         {
             query = query.Where(l => l.RiskLevel == parameters.RiskLevel);
+        }
+
+        if (!string.IsNullOrWhiteSpace(parameters.UrbanisticStatus))
+        {
+            query = query.Where(l => l.UrbanisticStatus == parameters.UrbanisticStatus);
         }
 
         if (!string.IsNullOrWhiteSpace(parameters.Source))
@@ -76,6 +96,11 @@ public class PropertyListingRepository(ImmoDiggerDbContext dbContext) : IPropert
             query = query.Where(l => l.IsActive == parameters.IsActive);
         }
 
+        if (parameters.ExcludeDemo == true)
+        {
+            query = query.Where(l => !l.ExternalId.StartsWith("DEMO-"));
+        }
+
         if (parameters.HasGarage.HasValue)
         {
             query = query.Where(l => l.HasGarage == parameters.HasGarage);
@@ -84,6 +109,12 @@ public class PropertyListingRepository(ImmoDiggerDbContext dbContext) : IPropert
         if (!string.IsNullOrWhiteSpace(parameters.PebRating))
         {
             query = query.Where(l => l.PebRating == parameters.PebRating);
+        }
+
+        if (parameters.MinimumAgeDays is > 0)
+        {
+            var seenBefore = DateTime.UtcNow.AddDays(-parameters.MinimumAgeDays.Value);
+            query = query.Where(l => l.FirstSeenAt <= seenBefore);
         }
 
         if (parameters.FirstSeenFrom.HasValue)
@@ -120,24 +151,48 @@ public class PropertyListingRepository(ImmoDiggerDbContext dbContext) : IPropert
 
     private static IQueryable<PropertyListing> ApplySort(
         IQueryable<PropertyListing> query, string? sortBy, bool descending) =>
+        // Listings missing the sorted value always go last: PostgreSQL would
+        // otherwise put NULLs first when sorting descending.
         sortBy?.ToLowerInvariant() switch
         {
-            "price" => descending ? query.OrderByDescending(l => l.AskingPrice) : query.OrderBy(l => l.AskingPrice),
-            "score" => descending ? query.OrderByDescending(l => l.OpportunityScore) : query.OrderBy(l => l.OpportunityScore),
-            "livingarea" => descending ? query.OrderByDescending(l => l.LivingArea) : query.OrderBy(l => l.LivingArea),
+            "price" => descending
+                ? query.OrderBy(l => l.AskingPrice == null).ThenByDescending(l => l.AskingPrice)
+                : query.OrderBy(l => l.AskingPrice == null).ThenBy(l => l.AskingPrice),
+            "score" => descending
+                ? query.OrderBy(l => l.OpportunityScore == null).ThenByDescending(l => l.OpportunityScore)
+                : query.OrderBy(l => l.OpportunityScore == null).ThenBy(l => l.OpportunityScore),
+            "livingarea" => descending
+                ? query.OrderBy(l => l.LivingArea == null).ThenByDescending(l => l.LivingArea)
+                : query.OrderBy(l => l.LivingArea == null).ThenBy(l => l.LivingArea),
             _ => descending ? query.OrderByDescending(l => l.FirstSeenAt) : query.OrderBy(l => l.FirstSeenAt),
         };
 
-    public Task<PropertyListing?> GetBySourceAndExternalIdAsync(
+    // The three lookups below feed deduplication, which runs over a whole
+    // batch of collected listings before anything is saved. They therefore
+    // also look at listings added earlier in the same unit of work
+    // (DbSet.Local): a database-only query can't see those yet, and the same
+    // listing arriving twice in one batch (e.g. in several alert emails)
+    // would be inserted once per occurrence.
+
+    public async Task<PropertyListing?> GetBySourceAndExternalIdAsync(
         string source,
         string externalId,
-        CancellationToken cancellationToken = default) =>
-        dbContext.PropertyListings
+        CancellationToken cancellationToken = default)
+    {
+        var pending = dbContext.PropertyListings.Local
+            .FirstOrDefault(l => l.Source == source && l.ExternalId == externalId);
+        if (pending is not null)
+        {
+            return pending;
+        }
+
+        return await dbContext.PropertyListings
             // Loaded eagerly so PriceHistory reflects newly-appended entries
             // (via AddPriceHistoryEntry) immediately in memory, e.g. for a
             // caller that inspects the returned entity right away.
             .Include(l => l.PriceHistory)
             .FirstOrDefaultAsync(l => l.Source == source && l.ExternalId == externalId, cancellationToken);
+    }
 
     public async Task<PropertyListing?> GetByNormalizedUrlAsync(
         string normalizedUrl,
@@ -147,17 +202,22 @@ public class PropertyListingRepository(ImmoDiggerDbContext dbContext) : IPropert
         // stores the raw (non-normalized) URL, so the comparison has to happen
         // in memory. Acceptable at personal-app scale; if the table grows
         // large, consider persisting a precomputed normalized-URL column.
-        var listings = await dbContext.PropertyListings
+        await dbContext.PropertyListings
             .Include(l => l.PriceHistory)
-            .ToListAsync(cancellationToken);
+            .LoadAsync(cancellationToken);
 
-        return listings.FirstOrDefault(l => UrlNormalizer.Normalize(l.Url) == normalizedUrl);
+        return dbContext.PropertyListings.Local
+            .FirstOrDefault(l => UrlNormalizer.Normalize(l.Url) == normalizedUrl);
     }
 
-    public async Task<IReadOnlyList<PropertyListing>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        await dbContext.PropertyListings
+    public async Task<IReadOnlyList<PropertyListing>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        await dbContext.PropertyListings.LoadAsync(cancellationToken);
+
+        return dbContext.PropertyListings.Local
             .OrderByDescending(l => l.FirstSeenAt)
-            .ToListAsync(cancellationToken);
+            .ToList();
+    }
 
     public async Task<IReadOnlyList<PropertyListing>> GetActiveBySourceAsync(
         string source,
@@ -167,32 +227,55 @@ public class PropertyListingRepository(ImmoDiggerDbContext dbContext) : IPropert
             .ToListAsync(cancellationToken);
 
     public Task<int> CountBySourceAsync(string source, CancellationToken cancellationToken = default) =>
-        dbContext.PropertyListings.CountAsync(l => l.Source == source, cancellationToken);
+        dbContext.PropertyListings.CountAsync(
+            l => l.Source == source && !l.ExternalId.StartsWith("DEMO-"),
+            cancellationToken);
 
     public async Task<DashboardStats> GetDashboardStatsAsync(
         decimal strongOpportunityThreshold,
         CancellationToken cancellationToken = default)
     {
         var todayUtc = DateTime.UtcNow.Date;
+        var activeListings = dbContext.PropertyListings.Where(l => l.IsActive);
+        var realActiveListings = activeListings.Where(l => !l.ExternalId.StartsWith("DEMO-"));
 
-        var newToday = await dbContext.PropertyListings
+        // Demo rows remain available for UI testing, but must never influence
+        // decision-making KPIs shown to the investor.
+        var newToday = await realActiveListings
             .CountAsync(l => l.FirstSeenAt >= todayUtc, cancellationToken);
-        var activeCount = await dbContext.PropertyListings
-            .CountAsync(l => l.IsActive, cancellationToken);
+        var activeCount = await activeListings.CountAsync(cancellationToken);
+        var realActiveCount = await realActiveListings.CountAsync(cancellationToken);
+        var demoActiveCount = await activeListings
+            .CountAsync(l => l.ExternalId.StartsWith("DEMO-"), cancellationToken);
+        var pricedActiveCount = await realActiveListings
+            .CountAsync(l => l.AskingPrice.HasValue, cancellationToken);
+        var scoredActiveCount = await realActiveListings
+            .CountAsync(l => l.OpportunityScore.HasValue, cancellationToken);
+
         // Average() over a nullable column ignores nulls (matches SQL AVG()
         // semantics) and returns null rather than throwing on an empty set.
-        var averagePrice = await dbContext.PropertyListings
+        var averagePrice = await realActiveListings
             .Select(l => l.AskingPrice)
             .AverageAsync(cancellationToken);
-        var averageScore = await dbContext.PropertyListings
+        var averageScore = await realActiveListings
             .Select(l => l.OpportunityScore)
             .AverageAsync(cancellationToken);
-        var strongOpportunities = await dbContext.PropertyListings
+        var strongOpportunities = await realActiveListings
             .CountAsync(l => l.OpportunityScore >= strongOpportunityThreshold, cancellationToken);
-        var highRisk = await dbContext.PropertyListings
+        var highRisk = await realActiveListings
             .CountAsync(l => l.RiskLevel == RiskLevel.High, cancellationToken);
 
-        return new DashboardStats(newToday, activeCount, averagePrice, averageScore, strongOpportunities, highRisk);
+        return new DashboardStats(
+            newToday,
+            activeCount,
+            realActiveCount,
+            demoActiveCount,
+            pricedActiveCount,
+            scoredActiveCount,
+            averagePrice,
+            averageScore,
+            strongOpportunities,
+            highRisk);
     }
 
     public Task<int> CountMatchingProfileAsync(SearchProfile profile, CancellationToken cancellationToken = default)

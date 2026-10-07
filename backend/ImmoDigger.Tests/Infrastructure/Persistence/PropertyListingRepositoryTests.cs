@@ -1,4 +1,5 @@
 using ImmoDigger.Domain.Entities;
+using ImmoDigger.Application.DTOs;
 using ImmoDigger.Infrastructure.Persistence.Repositories;
 
 namespace ImmoDigger.Tests.Infrastructure.Persistence;
@@ -60,6 +61,25 @@ public class PropertyListingRepositoryTests
     }
 
     [Fact]
+    public async Task GetPagedAsync_FiltersByUrbanisticStatus()
+    {
+        await using var dbContext = TestDbContextFactory.Create();
+        var repository = new PropertyListingRepository(dbContext);
+        var infraction = CreateListing("EXT-INFRACTION");
+        infraction.UrbanisticStatus = "Infraction";
+        var compliant = CreateListing("EXT-COMPLIANT");
+        compliant.UrbanisticStatus = "Compliant";
+        await repository.AddAsync(infraction);
+        await repository.AddAsync(compliant);
+        await repository.AddAsync(CreateListing("EXT-UNKNOWN"));
+        await repository.SaveChangesAsync();
+
+        var result = await repository.GetPagedAsync(new ListingQueryParameters { UrbanisticStatus = "Infraction" });
+
+        Assert.Equal(infraction.Id, Assert.Single(result.Items).Id);
+    }
+
+    [Fact]
     public async Task Update_PersistsChanges()
     {
         await using var dbContext = TestDbContextFactory.Create();
@@ -74,5 +94,40 @@ public class PropertyListingRepositoryTests
 
         var stored = await repository.GetByIdAsync(listing.Id);
         Assert.Equal(350_000m, stored!.AskingPrice);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_AppliesProfileInvestmentFiltersTogether()
+    {
+        await using var dbContext = TestDbContextFactory.Create();
+        var repository = new PropertyListingRepository(dbContext);
+
+        var matching = CreateListing("MATCH");
+        matching.EstimatedGrossYield = 6.5m;
+        matching.LivingArea = 250m;
+
+        var publicSale = CreateListing("PUBLIC");
+        publicSale.EstimatedGrossYield = 7m;
+        publicSale.LivingArea = 300m;
+        publicSale.SaleType = "PublicSale";
+
+        var tooSmall = CreateListing("SMALL");
+        tooSmall.EstimatedGrossYield = 8m;
+        tooSmall.LivingArea = 120m;
+
+        await repository.AddAsync(matching);
+        await repository.AddAsync(publicSale);
+        await repository.AddAsync(tooSmall);
+        await repository.SaveChangesAsync();
+
+        var result = await repository.GetPagedAsync(new ListingQueryParameters
+        {
+            MinimumGrossYield = 6m,
+            MinimumLivingArea = 200m,
+            IncludePublicSales = false,
+        });
+
+        var item = Assert.Single(result.Items);
+        Assert.Equal("MATCH", item.ExternalId);
     }
 }

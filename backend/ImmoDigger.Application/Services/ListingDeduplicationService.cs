@@ -3,6 +3,7 @@ using ImmoDigger.Application.DTOs;
 using ImmoDigger.Application.Interfaces;
 using ImmoDigger.Domain.Common;
 using ImmoDigger.Domain.Entities;
+using System.Text.Json;
 
 namespace ImmoDigger.Application.Services;
 
@@ -137,7 +138,10 @@ public class ListingDeduplicationService(IPropertyListingRepository repository) 
         listing.BedroomCount = collected.BedroomCount;
         listing.BathroomCount = collected.BathroomCount;
         listing.OfficialUnitCount = collected.OfficialUnitCount;
+        listing.OfficialUnitCountSourceName = collected.OfficialUnitCountSourceName;
+        listing.OfficialUnitCountSourceUrl = collected.OfficialUnitCountSourceUrl;
         listing.ObservedUnitCount = collected.ObservedUnitCount;
+        listing.OfficialDocumentsJson = JsonSerializer.Serialize(collected.OfficialDocuments);
         listing.LivingArea = collected.LivingArea;
         listing.LandArea = collected.LandArea;
         listing.PebRating = collected.PebRating;
@@ -180,6 +184,14 @@ public class ListingDeduplicationService(IPropertyListingRepository repository) 
                 return [$"Hash de contenu identique a l'annonce {candidate.Source}/{candidate.ExternalId}."];
             }
 
+            if (IsSamePropertyOnAnotherPortal(collected, candidate))
+            {
+                return [
+                    $"Meme bien que l'annonce {candidate.Source}/{candidate.ExternalId} : " +
+                    "code postal, prix et surface identiques sur un autre portail."
+                ];
+            }
+
             if (!hasAddress)
             {
                 continue;
@@ -206,6 +218,28 @@ public class ListingDeduplicationService(IPropertyListingRepository repository) 
 
         return null;
     }
+
+    /// <summary>
+    /// Portal alerts rarely carry a street address, so levels 3+4 can't see
+    /// that Immoweb and Immovlan are advertising the same building. An exact
+    /// match on postal code, price and living area across two different
+    /// sources is treated as that same property. Deliberately not applied
+    /// within one source: identical units of a new development legitimately
+    /// share all three.
+    /// </summary>
+    public static bool IsSamePropertyOnAnotherPortal(CollectedListing collected, PropertyListing candidate) =>
+        !string.Equals(collected.Source, candidate.Source, StringComparison.OrdinalIgnoreCase) &&
+        IsSameProperty(
+            collected.PostalCode, collected.AskingPrice, collected.LivingArea,
+            candidate.PostalCode, candidate.AskingPrice, candidate.LivingArea);
+
+    public static bool IsSameProperty(
+        string? postalCodeA, decimal? priceA, decimal? areaA,
+        string? postalCodeB, decimal? priceB, decimal? areaB) =>
+        !string.IsNullOrWhiteSpace(postalCodeA) &&
+        string.Equals(postalCodeA.Trim(), postalCodeB?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+        priceA is > 0 && priceA == priceB &&
+        areaA is > 0 && areaA == areaB;
 
     private static bool IsClose(decimal? a, decimal? b, decimal tolerance)
     {

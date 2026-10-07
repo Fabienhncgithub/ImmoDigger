@@ -206,4 +206,64 @@ public class ListingDeduplicationServiceTests
 
         Assert.Equal(DeduplicationResult.ProbableDuplicate, outcome.Result);
     }
+
+    [Fact]
+    public async Task ProcessAsync_DoesNotInsertTwice_WhenTheSameListingComesTwiceInOneUnsavedBatch()
+    {
+        await using var dbContext = TestDbContextFactory.Create();
+        var repository = new PropertyListingRepository(dbContext);
+        var sut = new ListingDeduplicationService(repository);
+
+        // Same listing in two alert emails: each email links through its own
+        // tracking URL and yields its own content hash, and nothing is saved
+        // in between - exactly what a collection cycle does.
+        var first = await sut.ProcessAsync(CreateCollected(
+            source: "Immovlan", externalId: "VBE44901", url: "https://example.invalid/tr/aaa", rawContentHash: "hash-a"));
+        var second = await sut.ProcessAsync(CreateCollected(
+            source: "Immovlan", externalId: "VBE44901", url: "https://example.invalid/tr/bbb", rawContentHash: "hash-b"));
+        await repository.SaveChangesAsync();
+
+        Assert.Equal(DeduplicationResult.NewListing, first.Result);
+        Assert.NotEqual(DeduplicationResult.NewListing, second.Result);
+        Assert.Equal(1, await dbContext.PropertyListings.CountAsync());
+    }
+
+    [Fact]
+    public async Task ProcessAsync_FlagsProbableDuplicate_WhenAnotherPortalHasTheSamePostalCodePriceAndArea()
+    {
+        await using var dbContext = TestDbContextFactory.Create();
+        var repository = new PropertyListingRepository(dbContext);
+        var sut = new ListingDeduplicationService(repository);
+
+        await sut.ProcessAsync(CreateCollected(
+            source: "Immovlan", externalId: "VBE44901", title: "Immeuble de rapport à vendre à Bruxelles, 1000",
+            address: "", postalCode: "1000", city: "Bruxelles", askingPrice: 1_440_000m, livingArea: 901m));
+        await repository.SaveChangesAsync();
+
+        var outcome = await sut.ProcessAsync(CreateCollected(
+            source: "Immoweb", externalId: "21701625", url: "https://example.invalid/listing/2",
+            title: "1 500 000 € 1 440 000 € 3 ch. • 901 m² 1000 Bruxelles Voir +",
+            address: "", postalCode: "1000", city: "Bruxelles Voir", askingPrice: 1_440_000m, livingArea: 901m,
+            rawContentHash: "hash-2"));
+
+        Assert.Equal(DeduplicationResult.ProbableDuplicate, outcome.Result);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_KeepsBothListings_WhenTheSamePortalHasTwoIdenticalUnits()
+    {
+        await using var dbContext = TestDbContextFactory.Create();
+        var repository = new PropertyListingRepository(dbContext);
+        var sut = new ListingDeduplicationService(repository);
+
+        await sut.ProcessAsync(CreateCollected(
+            externalId: "UNIT-A", title: "Appartement A1", address: "", askingPrice: 300_000m, livingArea: 80m));
+        await repository.SaveChangesAsync();
+
+        var outcome = await sut.ProcessAsync(CreateCollected(
+            externalId: "UNIT-B", url: "https://example.invalid/listing/2", title: "Studio B2 rénové", address: "",
+            askingPrice: 300_000m, livingArea: 80m, rawContentHash: "hash-2"));
+
+        Assert.Equal(DeduplicationResult.NewListing, outcome.Result);
+    }
 }
