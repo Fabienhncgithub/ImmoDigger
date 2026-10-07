@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -42,7 +43,8 @@ public class BidditCollector(
     // to satisfy on paper. Tests override the delay (via the constructor)
     // to stay fast without changing the production default.
     private const int MaxListingsPerCycle = 10;
-    private readonly TimeSpan _delayBetweenRequests = delayBetweenRequests ?? TimeSpan.FromSeconds(1.5);
+    private const int MaxCandidatesPerCycle = 20;
+    private readonly TimeSpan _delayBetweenRequests = delayBetweenRequests ?? TimeSpan.FromMilliseconds(750);
 
     public string SourceName => "Biddit";
 
@@ -55,7 +57,12 @@ public class BidditCollector(
 
         var results = new List<CollectedListing>();
 
-        foreach (var reference in references.Take(MaxListingsPerCycle))
+        // Biddit orders detail references from oldest to newest. Looking at
+        // the first entries repeatedly meant examining stale lots and could
+        // miss every listing around Brussels. Start with the newest lots and
+        // inspect a bounded candidate window; stop as soon as the accepted
+        // result limit is reached.
+        foreach (var reference in references.AsEnumerable().Reverse().Take(MaxCandidatesPerCycle))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -77,7 +84,16 @@ public class BidditCollector(
                 var collected = MapToCollectedListing(lot);
                 if (collected is not null)
                 {
+                    collected = await EnrichFromOfficialDocumentsAsync(
+                        client,
+                        lot,
+                        collected,
+                        cancellationToken);
                     results.Add(collected);
+                    if (results.Count >= MaxListingsPerCycle)
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -170,12 +186,32 @@ public class BidditCollector(
         var image = property?.Pictures.OrderBy(p => p.OrderIndex ?? int.MaxValue).FirstOrDefault();
         var isPublicSale = string.Equals(lot.HandlingMethod, "ONLINE_PUBLIC_SALE", StringComparison.OrdinalIgnoreCase);
         var askingPrice = lot.StartingPrice ?? lot.SellingPrice;
+        var pebRating = ExtractPebLetter(FirstNonEmpty(
+            property?.EnergeticClassRbc,
+            property?.EnergeticClassRw,
+            property?.EnergeticClassRf)) ?? ExtractPebLetterFromDescription(description);
+        var pebConsumption = ExtractPebConsumption(description);
+        var cadastralIncome = property?.LandIncome?.LandIncome ?? ExtractCadastralIncome(description);
+        var listingUrl = $"https://www.biddit.be/fr/catalog/detail/{lot.Reference}";
+        var officialUnitCount = property?.Construction?.NumberOfHousingUnits;
+        var propertyType = MapPropertyType(property?.PropertyType, property?.PropertySubtype);
+        var observedUnitCount = ExtractObservedUnitCount(description) ??
+                                (propertyType is "House" or "Apartment" ? 1 : null);
+        var officialDocuments = (property?.Attachments ?? [])
+            .Where(attachment => BidditOfficialDocumentAnalyzer.IsAllowedDocumentUrl(attachment.BucketUrl))
+            .Select(attachment => new ListingDocumentDto(
+                attachment.Type ?? "OTHER",
+                string.IsNullOrWhiteSpace(attachment.Name) ? "Document officiel" : attachment.Name,
+                attachment.BucketUrl!))
+            .DistinctBy(document => document.Url, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var documentSignature = string.Join('|', officialDocuments.Select(document => $"{document.Type}:{document.Name}:{document.Url}"));
 
         return new CollectedListing
         {
             Source = "Biddit",
             ExternalId = lot.Reference,
-            Url = $"https://www.biddit.be/fr/catalog/detail/{lot.Reference}",
+            Url = listingUrl,
             Title = title,
             ImageUrl = image?.Large ?? image?.Medium,
             Description = description,
@@ -185,22 +221,69 @@ public class BidditCollector(
             AskingPrice = askingPrice,
             CurrentBid = lot.CurrentPrice,
             SaleType = isPublicSale ? "PublicSale" : "RegularSale",
-            PropertyType = MapPropertyType(property?.PropertyType, property?.PropertySubtype),
-            BedroomCount = property?.NumberOfBedrooms,
-            BathroomCount = property?.NumberOfBathrooms,
-            OfficialUnitCount = property?.Construction?.NumberOfHousingUnits,
-            LivingArea = property?.LivingSurfaceArea,
+            PropertyType = propertyType,
+            BedroomCount = property?.Rooms?.NumberOfBedrooms ?? property?.NumberOfBedrooms,
+            BathroomCount = property?.Rooms?.NumberOfBathRooms ?? property?.NumberOfBathrooms,
+            OfficialUnitCount = officialUnitCount,
+            OfficialUnitCountSourceName = officialUnitCount.HasValue ? "Fiche structurée Biddit" : null,
+            OfficialUnitCountSourceUrl = officialUnitCount.HasValue ? listingUrl : null,
+            ObservedUnitCount = observedUnitCount,
+            OfficialDocuments = officialDocuments,
+            LivingArea = property?.Rooms?.LivingSurfaceArea ?? property?.LivingSurfaceArea,
             LandArea = property?.Features?.TerrainSurface,
-            PebRating = ExtractPebLetter(FirstNonEmpty(property?.EnergeticClassRbc, property?.EnergeticClassRw, property?.EnergeticClassRf)),
+            PebRating = pebRating,
+            PebConsumption = pebConsumption,
             HasGarage = property?.Features?.GarageSurface is > 0,
             HasTerrace = property?.Features?.HasTerrace,
             HasGarden = property?.Features?.HasGarden,
-            CadastralIncome = property?.LandIncome?.LandIncome,
+            CadastralIncome = cadastralIncome,
             AuctionStartDate = ToUtc(lot.BiddingStartDateTime),
             AuctionEndDate = ToUtc(lot.BiddingEndDateTime),
             PublishedAt = ToUtc(lot.FirstPublicationDateTime),
-            RawContentHash = ComputeContentHash(title, description, askingPrice, lot.CurrentPrice, address),
+            RawContentHash = ComputeContentHash(
+                title,
+                description,
+                askingPrice,
+                lot.CurrentPrice,
+                address,
+                pebRating,
+                pebConsumption,
+                cadastralIncome,
+                officialUnitCount,
+                documentSignature),
         };
+    }
+
+    private async Task<CollectedListing> EnrichFromOfficialDocumentsAsync(
+        HttpClient client,
+        BidditLotDto lot,
+        CollectedListing collected,
+        CancellationToken cancellationToken)
+    {
+        if (collected.OfficialUnitCount.HasValue)
+        {
+            return collected;
+        }
+
+        var attachments = lot.Properties.FirstOrDefault()?.Attachments ?? [];
+        var evidence = await BidditOfficialDocumentAnalyzer.FindOfficialUnitCountAsync(
+            client,
+            attachments,
+            logger,
+            cancellationToken);
+
+        return evidence is null
+            ? collected
+            : collected with
+            {
+                OfficialUnitCount = evidence.Count,
+                OfficialUnitCountSourceName = $"Document urbanistique Biddit · {evidence.DocumentName}",
+                OfficialUnitCountSourceUrl = evidence.DocumentUrl,
+                RawContentHash = ComputeEnrichedContentHash(
+                    collected.RawContentHash,
+                    evidence.Count,
+                    evidence.DocumentUrl),
+            };
     }
 
     /// <summary>Best-effort mapping based on the values sampled while building this collector; unmapped values pass through as-is.</summary>
@@ -214,6 +297,7 @@ public class BidditCollector(
             "BUILDING" or "MIXED_USE" => "IncomeBuilding",
             "INDUSTRIAL" or "COMMERCIAL" => "Warehouse",
             "OFFICE" => "Office",
+            "OTHER" => "Other",
             _ => propertyType ?? propertySubtype ?? "Other",
         };
 
@@ -231,9 +315,98 @@ public class BidditCollector(
             : energeticClass;
     }
 
-    private static string ComputeContentHash(string title, string description, decimal? askingPrice, decimal? currentBid, string address)
+    private static string? ExtractPebLetterFromDescription(string description)
     {
-        var content = $"{title}|{description}|{askingPrice}|{currentBid}|{address}";
+        var match = Regex.Match(
+            description,
+            @"(?is)\b(?:EPC|PEB|ENERGIELABEL|LABEL\s+ÉNERGÉTIQUE|CLASSE\s+ÉNERGÉTIQUE)\b.{0,240}?\b([A-G])(?:\+{1,2})?\b");
+        return match.Success ? match.Groups[1].Value.ToUpperInvariant() : null;
+    }
+
+    private static decimal? ExtractPebConsumption(string description)
+    {
+        var match = Regex.Match(
+            description,
+            @"(?i)\b(\d{2,4}(?:[.,]\d+)?)\s*kWh\s*/\s*\(?m(?:²|2)");
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        return decimal.TryParse(
+            match.Groups[1].Value.Replace(',', '.'),
+            NumberStyles.Number,
+            CultureInfo.InvariantCulture,
+            out var value)
+            ? value
+            : null;
+    }
+
+    private static decimal? ExtractCadastralIncome(string description)
+    {
+        var match = Regex.Match(description, @"(?i)\bKI\s*:\s*([\d.\s]+)");
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        var digits = Regex.Replace(match.Groups[1].Value, @"\D", string.Empty);
+        return decimal.TryParse(digits, NumberStyles.None, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : null;
+    }
+
+    /// <summary>
+    /// Extracts only an explicit residential-unit statement from the public
+    /// description. For a plain house/apartment the caller uses one advertised
+    /// unit as a fallback, while keeping it distinct from the official count.
+    /// </summary>
+    internal static int? ExtractObservedUnitCount(string description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return null;
+        }
+
+        var patterns = new[]
+        {
+            @"(?i)\b(?:divis(?:é|e)e?|compos(?:é|e)e?)\s+(?:sans\s+autorisation\s+)?(?:en|de)\s+(\d{1,2})\s+logements?\b",
+            @"(?i)\b(\d{1,2})\s+(?:logements?|appartements?|unités?\s+d['’]habitation)\b",
+            @"(?i)\b(?:verdeeld|opgedeeld)\s+in\s+(\d{1,2})\s+(?:wooneenheden|woongelegenheden|woningen|appartementen)\b",
+            @"(?i)\b(\d{1,2})\s+(?:wooneenheden|woongelegenheden|woningen|appartementen)\b",
+        };
+
+        foreach (var pattern in patterns)
+        {
+            var match = Regex.Match(description, pattern);
+            if (match.Success && int.TryParse(match.Groups[1].Value, out var count) && count is > 0 and <= 50)
+            {
+                return count;
+            }
+        }
+
+        return null;
+    }
+
+    private static string ComputeContentHash(
+        string title,
+        string description,
+        decimal? askingPrice,
+        decimal? currentBid,
+        string address,
+        string? pebRating,
+        decimal? pebConsumption,
+        decimal? cadastralIncome,
+        int? officialUnitCount,
+        string documentSignature)
+    {
+        var content = $"{title}|{description}|{askingPrice}|{currentBid}|{address}|{pebRating}|{pebConsumption}|{cadastralIncome}|{officialUnitCount}|{documentSignature}";
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(content)));
+    }
+
+    private static string ComputeEnrichedContentHash(string baseHash, int officialUnitCount, string sourceUrl)
+    {
+        var content = $"{baseHash}|{officialUnitCount}|{sourceUrl}";
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(content)));
     }
 

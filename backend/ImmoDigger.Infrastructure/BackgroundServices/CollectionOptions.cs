@@ -11,6 +11,12 @@ public class CollectionOptions
 {
     public const string SectionName = "Collection";
 
+    /// <summary>
+    /// Controls the periodic scheduler only. The explicit API trigger stays
+    /// available, which is useful for a deterministic demo/test startup.
+    /// </summary>
+    public bool ScheduleEnabled { get; set; } = true;
+
     public int DefaultPollingIntervalMinutes { get; set; } = 15;
 
     public int MaxConcurrentCollectors { get; set; } = 2;

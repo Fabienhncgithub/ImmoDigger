@@ -142,6 +142,7 @@ public class ListingCollectionBackgroundServiceTests
             Title = "Immeuble deja vu, jamais analyse",
             AskingPrice = 350_000m,
             OfficialUnitCount = 3,
+            LivingArea = 250m,
             PostalCode = "1060",
             City = "Saint-Gilles",
             SaleType = "RegularSale",
@@ -206,6 +207,19 @@ public class ListingCollectionBackgroundServiceTests
         await sut.RunCollectionCycleAsync(CancellationToken.None);
 
         Assert.Equal(0, collector.InvocationCount);
+    }
+
+    [Fact]
+    public async Task RunCollectionCycleAsync_RunsSourceNotYetDue_WhenForcedManually()
+    {
+        var collector = new RecordingTestCollector("NotDue");
+        using var provider = BuildProvider([collector]);
+        await SeedSourceAsync(provider, "NotDue", lastSuccessfulRunAt: DateTime.UtcNow, pollingIntervalMinutes: 15);
+        var sut = CreateSut(provider);
+
+        await sut.RunCollectionCycleAsync(CancellationToken.None, force: true);
+
+        Assert.Equal(1, collector.InvocationCount);
     }
 
     [Fact]

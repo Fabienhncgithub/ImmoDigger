@@ -35,6 +35,12 @@ public class ListingCollectionBackgroundService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!_options.ScheduleEnabled)
+        {
+            logger.LogInformation("Scheduled listing collection is disabled; manual collection remains available.");
+            return;
+        }
+
         logger.LogInformation(
             "Listing collection background service started (tick every {IntervalMinutes} min, max {MaxConcurrent} concurrent collectors).",
             _options.DefaultPollingIntervalMinutes,
@@ -59,7 +65,7 @@ public class ListingCollectionBackgroundService(
         }
     }
 
-    public async Task RunCollectionCycleAsync(CancellationToken cancellationToken)
+    public async Task RunCollectionCycleAsync(CancellationToken cancellationToken, bool force = false)
     {
         if (!await _cycleLock.WaitAsync(0, cancellationToken))
         {
@@ -75,7 +81,9 @@ public class ListingCollectionBackgroundService(
                 var sourceRepository = scope.ServiceProvider.GetRequiredService<IListingSourceRepository>();
                 var enabledSources = await sourceRepository.GetEnabledAsync(cancellationToken);
                 var now = DateTime.UtcNow;
-                dueSources = enabledSources.Where(source => IsDue(source, now)).ToList();
+                dueSources = force
+                    ? enabledSources.ToList()
+                    : enabledSources.Where(source => IsDue(source, now)).ToList();
             }
 
             if (dueSources.Count == 0)
@@ -147,23 +155,23 @@ public class ListingCollectionBackgroundService(
                 {
                     var outcome = await deduplicationService.ProcessAsync(item, cancellationToken);
 
-                    // Score/risk are computed right away rather than only
+                    // Index/risk are computed right away rather than only
                     // on demand from the UI: otherwise every freshly-
-                    // collected listing would sit with a blank score until
-                    // a user happened to open it and click "Analyser",
+                    // collected listing would sit without an assessment
+                    // until a user happened to open it manually,
                     // which defeats the point of surfacing opportunities
                     // automatically. Re-run on every update too (not just
                     // "new"), since a price or PEB change can change the
-                    // outcome - but for an unchanged listing, only if it
-                    // was never analyzed in the first place (e.g. collected
-                    // before this behavior existed): re-scoring a stable,
-                    // already-analyzed listing every single cycle would be
-                    // pure waste. EstimatedGrossYield still depends on
+                    // outcome. For an unchanged listing, a missing risk level
+                    // is the marker that analysis has never run. A null index
+                    // alone is not such a marker anymore: it can legitimately
+                    // mean the listing lacks enough data. EstimatedGrossYield
+                    // still depends on
                     // manual rent-estimate inputs the user hasn't filled in
                     // yet, so it stays null until they do - only the risk
-                    // assessment and opportunity score benefit here.
+                    // assessment and comparison index benefit here.
                     var needsAnalysis = outcome.Result is DeduplicationResult.NewListing or DeduplicationResult.ExistingListingUpdated
-                        || (outcome.Result == DeduplicationResult.Unchanged && outcome.Listing?.OpportunityScore is null);
+                        || (outcome.Result == DeduplicationResult.Unchanged && outcome.Listing?.RiskLevel is null);
                     if (outcome.Listing is not null && needsAnalysis)
                     {
                         analysisService.Analyze(outcome.Listing);

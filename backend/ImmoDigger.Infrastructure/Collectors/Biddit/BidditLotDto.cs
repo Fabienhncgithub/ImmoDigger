@@ -56,6 +56,13 @@ public sealed class BidditPropertyDto
 
     public int? NumberOfBathrooms { get; set; }
 
+    /// <summary>
+    /// Current Biddit responses expose room counts and the living surface in
+    /// this nested object. The root-level properties above are kept as a
+    /// compatibility fallback for older responses.
+    /// </summary>
+    public BidditRoomsDto? Rooms { get; set; }
+
     public string? EnergeticClassRbc { get; set; }
 
     public string? EnergeticClassRw { get; set; }
@@ -67,6 +74,8 @@ public sealed class BidditPropertyDto
     public BidditFeaturesDto? Features { get; set; }
 
     public BidditLandIncomeDto? LandIncome { get; set; }
+
+    public List<BidditAttachmentDto> Attachments { get; set; } = [];
 }
 
 public sealed class BidditLocalizedTextDto
@@ -108,4 +117,19 @@ public sealed class BidditFeaturesDto
 public sealed class BidditLandIncomeDto
 {
     public decimal? LandIncome { get; set; }
+}
+
+public sealed class BidditRoomsDto
+{
+    public decimal? LivingSurfaceArea { get; set; }
+    public int? NumberOfBedrooms { get; set; }
+    public int? NumberOfBathRooms { get; set; }
+}
+
+public sealed class BidditAttachmentDto
+{
+    public string? AttachmentId { get; set; }
+    public string? Type { get; set; }
+    public string? BucketUrl { get; set; }
+    public string? Name { get; set; }
 }
