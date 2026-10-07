@@ -69,6 +69,9 @@ The production overlay adds HTTPS and requires a login. Set `DOMAIN`,
 `APP_USERS` (`name:password,…`) and `POSTGRES_PASSWORD` in `.env`.
 `APP_READONLY_USERS` adds accounts that can browse but not change anything.
 
+On a server that already has a reverse proxy, use `compose.shared-proxy.yaml`
+instead and import `deploy/Caddyfile.shared-proxy` into it.
+
 ## Index
 
 | Criterion | Points |

@@ -1,0 +1,31 @@
+# Production overlay for a server that already runs a reverse proxy with TLS:
+# nothing is published, and the frontend joins the proxy's Docker network.
+#
+#   docker compose -f compose.yaml -f compose.shared-proxy.yaml up --build -d
+#
+# Requires EDGE_NETWORK (the proxy's network), APP_USERS and POSTGRES_PASSWORD
+# in .env. The proxy then forwards the site to immodigger-web:80, see
+# deploy/Caddyfile.shared-proxy.
+
+services:
+  db:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+
+  api:
+    ports: !reset []
+
+  frontend:
+    environment:
+      APP_USERS: ${APP_USERS:?Set APP_USERS in .env - the site must not be public without a login}
+    ports: !reset []
+    networks:
+      default:
+      edge:
+        aliases:
+          - immodigger-web
+
+networks:
+  edge:
+    external: true
+    name: ${EDGE_NETWORK:?Set EDGE_NETWORK in .env}
