@@ -31,11 +31,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(response.status, `${init?.method ?? 'GET'} ${path} failed with ${response.status}`, details)
   }
 
-  if (response.status === 204) {
+  if (response.status === 204 || response.status === 205) {
     return undefined as T
   }
 
-  return (await response.json()) as T
+  // Action endpoints may legitimately return an empty 200/202 response
+  // (notably POST /collection/run). Parsing that as JSON would turn a
+  // successful request into a client-side error.
+  const body = await response.text()
+  return body ? (JSON.parse(body) as T) : (undefined as T)
 }
 
 export const apiClient = {

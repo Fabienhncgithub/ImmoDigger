@@ -1,0 +1,67 @@
+name: immodigger
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-immodigger}
+      POSTGRES_USER: ${POSTGRES_USER:-immodigger}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-immodigger-test-only}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/ImmoDigger.Api/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: Host=db;Port=5432;Database=${POSTGRES_DB:-immodigger};Username=${POSTGRES_USER:-immodigger};Password=${POSTGRES_PASSWORD:-immodigger-test-only}
+      DemoMode: ${DEMO_MODE:-true}
+      Collection__ScheduleEnabled: ${COLLECTION_SCHEDULE_ENABLED:-false}
+      Collection__DefaultPollingIntervalMinutes: ${COLLECTION_INTERVAL_MINUTES:-15}
+      Imap__Host: ${IMAP_HOST:-}
+      Imap__Port: ${IMAP_PORT:-993}
+      Imap__UseSsl: ${IMAP_USE_SSL:-true}
+      Imap__Username: ${IMAP_USERNAME:-}
+      Imap__Password: ${IMAP_PASSWORD:-}
+      Imap__Folder: ${IMAP_FOLDER:-INBOX}
+      Imap__LookbackDays: ${IMAP_LOOKBACK_DAYS:-7}
+      Imap__MaxMessagesPerRun: ${IMAP_MAX_MESSAGES_PER_RUN:-250}
+      Imap__UnseenOnly: ${IMAP_UNSEEN_ONLY:-false}
+      Imap__AutoEnable: ${IMAP_AUTO_ENABLE:-true}
+    # Debug access only, never reachable from another machine: in normal use
+    # the API is reached through the frontend's reverse proxy.
+    ports:
+      - "127.0.0.1:${API_PORT:-5080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    restart: unless-stopped
+    environment:
+      # "name:password,name2:password2" - see frontend/docker/40-access-control.sh
+      APP_USERS: ${APP_USERS:-}
+      APP_READONLY_USERS: ${APP_READONLY_USERS:-}
+    # Bound to this machine only by default. Publishing on a public address
+    # goes through compose.prod.yaml (HTTPS + mandatory login).
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres-data:
