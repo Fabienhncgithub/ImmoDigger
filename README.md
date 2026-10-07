@@ -1,155 +1,187 @@
 # ImmoDigger
 
-ImmoDigger est une application personnelle qui surveille les nouvelles
-annonces d'immeubles de rapport et d'immeubles à appartements mis en vente à
-Bruxelles et dans les communes proches. Elle collecte régulièrement des
-annonces depuis plusieurs sources, détecte les biens jamais vus, écarte les
-doublons, calcule des indicateurs d'investissement (rendement brut estimé,
-score d'opportunité, niveau de risque) et notifie l'utilisateur lorsqu'un
-bien intéressant apparaît.
+A personal real-estate radar for Belgian investment property. ImmoDigger gathers
+listings from several sources into one place, removes duplicates, tracks price
+changes, flags what needs checking and ranks every property with a transparent
+comparison index.
 
-Le projet est conçu pour un usage personnel, avec une architecture assez
-propre pour pouvoir évoluer vers un SaaS plus tard.
+![Dashboard](docs/screenshots/dashboard.png)
 
-> **Statut** : projet en construction, développé commit par commit. Ce
-> README sera complété au fur et à mesure (voir la feuille de route
-> ci-dessous). La documentation complète (Docker, Telegram, mode démo,
-> ajout d'un collecteur, limites légales...) sera ajoutée avec la mise en
-> place du déploiement Docker.
+## Why
+
+Looking for an income property in Belgium means following half a dozen portals,
+public-sale platforms and institutional sellers, each with its own alerts and
+its own way of describing a building. The same property shows up several times,
+price drops go unnoticed, and the details that decide an investment (number of
+recognised units, planning infractions, time on the market) are buried in free
+text.
+
+ImmoDigger turns that into a single, comparable list.
+
+## Features
+
+- **Multi-source collection** on a schedule: portal alert emails (Immoweb,
+  Immovlan, Zimmo, 2ememain, Spotto, Immoscoop, Realo, agencies), public
+  APIs and pages (Biddit, Régie des Bâtiments, bpost immo, Proximus Real
+  Estate) and one-off import by URL.
+- **Deduplication** on five levels, from source identifier to content hash,
+  including the same property advertised on two portals.
+- **Comparison index out of 100** built from six criteria, with the number of
+  criteria actually evaluated shown next to every score.
+- **Vigilance signals** read from the listing text in French and Dutch:
+  planning infractions, units not officially recognised, non-compliant
+  electrics, occupied property, missing price.
+- **Official documents** for public sales: the planning and cadastre PDFs
+  published with a Biddit lot are read to find the recognised unit count.
+- **Time on the market** highlighted once a listing has been online for two
+  months, and again after four.
+- **Price history**, personal notes, rent and renovation assumptions, and a
+  gross-yield estimate per listing.
+- **Saved search profiles** that open the matching listings in one click.
+- **Responsive interface**, from phone to wide desktop.
+
+| Listings | Listing detail |
+| --- | --- |
+| ![Listings](docs/screenshots/listings.png) | ![Listing detail](docs/screenshots/listing-detail.png) |
+
+## How the index works
+
+Each criterion is worth a fixed number of points. A criterion whose data is
+missing is ignored rather than counted against the property, and the index is
+the share of points earned out of the points available, scaled to 100. Below
+40 available points no index is shown at all.
+
+| Criterion | Points | Based on |
+| --- | --- | --- |
+| Price per m² | 25 | Reference price divided by living area |
+| Estimated gross yield | 25 | Rent entered by the user, price and costs |
+| Number of units | 15 | Units described in the listing or official documents |
+| Location | 15 | A fixed three-tier ranking of Brussels communes |
+| Energy performance | 10 | PEB / EPC rating |
+| Vigilance | 10 | Risk level derived from the signals above |
+
+The scales live in one place in the code. The in-app page explaining the index
+is generated from those same values through the API, so the explanation cannot
+drift from the calculation.
+
+![Index methodology](docs/screenshots/index.png)
 
 ## Architecture
-
-Monorepo composé d'un backend .NET (Clean Architecture simplifiée) et d'un
-frontend React.
 
 ```text
 ImmoDigger/
   backend/
-    ImmoDigger.Domain/          entités et règles métier
-    ImmoDigger.Application/     cas d'usage, DTO, interfaces, services
-    ImmoDigger.Infrastructure/  base de données, scrapers, notifications
-    ImmoDigger.Api/             contrôleurs, configuration
-    ImmoDigger.Tests/           tests xUnit (backend)
-  frontend/                     interface React (Vite + TypeScript)
-  docker-compose.yml            (ajouté ultérieurement)
-  .env.example
+    ImmoDigger.Domain/          entities and business rules
+    ImmoDigger.Application/     use cases, DTOs, interfaces, validation
+    ImmoDigger.Infrastructure/  PostgreSQL, collectors, IMAP, imports
+    ImmoDigger.Api/             controllers and HTTP start-up
+    ImmoDigger.Tests/           xUnit tests
+  frontend/                     React, TypeScript, Vite, nginx
+  compose.yaml                  PostgreSQL + API + frontend
+  compose.prod.yaml             HTTPS and mandatory login on top
 ```
 
-Chaque couche backend ne dépend que des couches "en dessous" d'elle :
-`Api` → `Infrastructure` → `Application` → `Domain`. Le `Domain` ne dépend
-de rien d'autre.
+The backend follows a simplified Clean Architecture: `Api` → `Infrastructure`
+→ `Application` → `Domain`. EF Core migrations are applied when the API
+starts.
 
-## Stack technique
+```text
+Alert emails ─┐
+Public APIs  ─┼─► Collectors ─► Deduplication ─► Price history ─► Analysis ─► API ─► React
+URL import   ─┘
+```
 
-**Backend** : ASP.NET Core Web API (.NET 10), Entity Framework Core,
-PostgreSQL, `BackgroundService` pour les collectes planifiées,
-`HttpClientFactory`, Playwright (uniquement si nécessaire), Serilog,
-FluentValidation, Swagger/OpenAPI, xUnit, Docker.
+| Layer | Stack |
+| --- | --- |
+| API | .NET 10, ASP.NET Core, EF Core, FluentValidation |
+| Data | PostgreSQL 17 |
+| Collection | MailKit (IMAP), HtmlAgilityPack, PdfPig |
+| Frontend | React 19, TypeScript, Vite, TanStack Query, React Router |
+| Delivery | Docker Compose, nginx, Caddy |
+| Tests | xUnit, EF Core InMemory |
 
-**Frontend** : React, Vite, TypeScript, React Router, TanStack Query, CSS
-classique (un fichier `.css` par composant, portant le même nom). Pas de
-Tailwind.
+### Collecting without scraping
 
-## Prérequis
+ImmoDigger does not bypass CAPTCHAs, logins or anti-bot protection. Portals
+that forbid automated access are only ever read through the alert emails they
+send to the user's own mailbox. Every source carries a collection method and
+an `Allowed` flag that is independent of whether the user enabled it, and the
+collection service refuses to run a source that is not allowed.
 
-- [.NET SDK 10](https://dotnet.microsoft.com/download)
-- [Node.js](https://nodejs.org/) ≥ 20 et npm
-- PostgreSQL (local ou via Docker, ajouté dans une étape ultérieure)
-- Docker (optionnel pour l'instant, requis à partir du déploiement conteneurisé)
+Importing by URL reads a single page requested by the user, and only its
+preview metadata. The server rejects local and private addresses, does not
+follow redirects and caps the download size, so it cannot be used as a relay
+into an internal network.
 
-## Lancement local
+## Getting started
 
-### Backend
+Requires Docker with Compose.
 
 ```bash
+cp .env.example .env
+docker compose up --build -d
+```
+
+Open <http://localhost:5173>. Demo mode is on by default and seeds fictional
+listings, so every screen can be tried without connecting a source.
+
+To collect real alerts, set the `IMAP_*` variables in `.env` to a mailbox that
+receives your saved-search emails, restart the API, then use **Sources → Lancer
+une collecte maintenant**. Use an application password where the provider
+offers one.
+
+## Development
+
+Requires the .NET 10 SDK, PostgreSQL and Node.js 22.
+
+```bash
+# Backend
 cd backend
-dotnet build
-dotnet test
-dotnet run --project ImmoDigger.Api
-```
+dotnet test ImmoDigger.slnx
+dotnet run --project ImmoDigger.Api --launch-profile http
 
-### Frontend
-
-```bash
+# Frontend
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-## Configuration
+The connection string is read from user secrets or the environment:
 
-Les secrets ne sont jamais commités. En développement, utiliser les
-[user-secrets .NET](https://learn.microsoft.com/aspnet/core/security/app-secrets)
-ou des variables d'environnement ; voir [.env.example](.env.example) pour
-la liste des variables attendues (connexion PostgreSQL, jeton Telegram,
-identifiants SMTP, URL de l'API pour le frontend).
-
-## Feuille de route (commits)
-
-1. ✅ Initialisation du monorepo (solution .NET, projets, frontend, structure)
-2. ✅ Modèle de données `PropertyListing` et persistance PostgreSQL
-3. ✅ Framework de collecte (`IListingCollector`, `BackgroundService`)
-4. ✅ Détection de doublons et historique des prix
-5. ✅ Analyse d'investissement et score de risque
-6. ✅ API REST (annonces, profils de recherche, sources)
-7. ⏸️ Notifications Telegram (reporté à la demande de l'utilisateur)
-8. ✅ Tableau de bord React
-9. Couverture de tests complète
-10. Déploiement Docker et documentation complète
-
-Réalisé hors feuille de route initiale : refonte de l'ingestion en
-pipeline multi-source conforme (voir section suivante), collecteurs réels
-Biddit et Régie des Bâtiments/Défense.
-
-## Pipeline de collecte conforme
-
-ImmoDigger ne scrape jamais un site qui l'interdit explicitement ou le
-bloque techniquement. Plutôt que de traiter "scraper ou renoncer" comme un
-choix binaire, la collecte est organisée en plusieurs sources, chacune
-n'utilisant que des moyens autorisés :
-
-```text
-Alertes email (Immoweb, Immovlan, Zimmo, agences)
-        ↓
-Sites/API publics vétés (Biddit, Régie des Bâtiments/Défense)
-        ↓
-Import manuel par URL (POST /api/import/url)
-        ↓
-Déduplication → Analyse d'investissement → Score
+```bash
+dotnet user-secrets --project ImmoDigger.Api set \
+  "ConnectionStrings:Postgres" \
+  "Host=localhost;Port=5432;Database=immodigger;Username=immodigger;Password=..."
 ```
 
-- **Alertes email** (`IEmailListingImporter`, `IEmailListingParser`) :
-  Immoweb, Immovlan et Zimmo ne sont jamais scrapés directement (CGU
-  explicites pour Immoweb, WAF/Cloudflare actifs pour les deux autres) ;
-  ils sont classés `ExternalAlertSource` et leurs annonces n'arrivent que
-  via les emails d'alerte que l'utilisateur reçoit déjà. Une agence
-  immobilière s'ajoute en enregistrant une nouvelle instance
-  `AgencyEmailParser` (domaine expéditeur + forme d'URL), pas un nouveau
-  fichier. Le raccordement à une vraie boîte mail (IMAP ou webhook) reste
-  à faire : `IEmailInbox` n'a qu'une implémentation `NullEmailInbox` (no-op)
-  pour l'instant.
-- **Sites/API publics vétés** (`IListingCollector`) : Biddit et la Régie
-  des Bâtiments (qui gère aussi la vente des anciens sites Défense), après
-  vérification de `robots.txt`, des CGU et de l'absence de protection
-  anti-bot. Voir `ReferenceDataSeeder` pour la décision et sa justification
-  par source (`CollectionMethod`, `Allowed`, `Notes`).
-- **Import manuel par URL** (`POST /api/import/url`) : l'utilisateur colle
-  l'URL d'une annonce qu'il regarde ; l'app lit uniquement les métadonnées
-  Open Graph publiques de la page, ou accepte une saisie manuelle si la
-  page ne peut pas être récupérée.
-- **Extension navigateur** (TODO, non développée) : un bouton "Ajouter à
-  ImmoDigger" sur les pages d'annonces consultées par l'utilisateur,
-  transmettant les informations déjà visibles à l'écran vers son instance
-  personnelle. Idée retenue pour une étape ultérieure.
+The OpenAPI document is served at `/openapi/v1.json` in the Development
+environment.
 
-## Limites légales et techniques de la collecte
+## Deployment
 
-ImmoDigger ne contourne jamais un CAPTCHA, une authentification, une
-limitation technique, une protection anti-bot (WAF, Cloudflare) ou une
-interdiction explicite des sites collectés. Chaque source déclare
-explicitement sa méthode de collecte (`CollectionMethod`) et si elle est
-`Allowed` ; ce dernier champ est un verrou de conformité central
-(`ListingCollectionBackgroundService`), indépendant du simple
-activé/désactivé (`IsEnabled`). Chaque source restant scrapable est
-désactivable, interrogée à fréquence raisonnable, avec un délai entre les
-requêtes et un User-Agent identifiant clairement l'application.
+`compose.yaml` only listens on the local machine. The production overlay adds
+automatic HTTPS and refuses to start without a login:
+
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml up --build -d
+```
+
+| Variable | Purpose |
+| --- | --- |
+| `DOMAIN` | Host name pointing at the server; its certificate is obtained automatically |
+| `APP_USERS` | Full-access accounts, as `name:password,name2:password2` |
+| `APP_READONLY_USERS` | Optional accounts that can browse but not change anything |
+| `POSTGRES_PASSWORD` | Database password |
+| `DEMO_MODE` | Set to `false` to stop seeding fictional listings |
+
+The API is never published directly: it is only reachable through the
+frontend's reverse proxy, behind the login.
+
+## Limitations
+
+- Alert emails carry a title, a price and a surface, not the full description.
+  For those listings the index usually rests on two criteria out of six.
+- The location criterion covers a handful of Brussels communes with a fixed
+  ranking; it is not market data.
+- All accounts share the same data: there are no per-user workspaces.
+- The interface is in French.
