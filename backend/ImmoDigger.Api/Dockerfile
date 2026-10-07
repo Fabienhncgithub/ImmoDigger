@@ -1,15 +1,19 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+# The SDK runs on the build machine's own architecture and cross-compiles for
+# the target, so building an amd64 image on an arm64 machine needs no emulation.
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG TARGETARCH
 WORKDIR /src
 
 COPY backend/ImmoDigger.Domain/ImmoDigger.Domain.csproj backend/ImmoDigger.Domain/
 COPY backend/ImmoDigger.Application/ImmoDigger.Application.csproj backend/ImmoDigger.Application/
 COPY backend/ImmoDigger.Infrastructure/ImmoDigger.Infrastructure.csproj backend/ImmoDigger.Infrastructure/
 COPY backend/ImmoDigger.Api/ImmoDigger.Api.csproj backend/ImmoDigger.Api/
-RUN dotnet restore backend/ImmoDigger.Api/ImmoDigger.Api.csproj
+RUN dotnet restore backend/ImmoDigger.Api/ImmoDigger.Api.csproj -a $TARGETARCH
 
 COPY backend/ backend/
 RUN dotnet publish backend/ImmoDigger.Api/ImmoDigger.Api.csproj \
     --configuration Release \
+    -a $TARGETARCH \
     --no-restore \
     --output /app/publish
 

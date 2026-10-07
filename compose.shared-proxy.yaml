@@ -5,17 +5,21 @@
 #
 # Requires EDGE_NETWORK (the proxy's network), APP_USERS and POSTGRES_PASSWORD
 # in .env. The proxy then forwards the site to immodigger-web:80, see
-# deploy/Caddyfile.shared-proxy.
+# deploy/Caddyfile.shared-proxy. The memory limits keep this stack from
+# starving its neighbours.
 
 services:
   db:
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    mem_limit: 256m
 
   api:
     ports: !reset []
+    mem_limit: 512m
 
   frontend:
+    mem_limit: 64m
     environment:
       APP_USERS: ${APP_USERS:?Set APP_USERS in .env - the site must not be public without a login}
     ports: !reset []

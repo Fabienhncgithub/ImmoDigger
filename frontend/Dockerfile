@@ -1,4 +1,5 @@
-FROM node:22-alpine AS build
+# The build output is static files, so it runs on the build machine's own architecture.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 
 COPY frontend/package.json frontend/package-lock.json ./
