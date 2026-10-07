@@ -2,11 +2,12 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
+  min-height: 30px;
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
   border: 1px solid var(--color-border);
-  background-color: var(--color-surface);
-  font-size: 0.82rem;
+  background: var(--color-surface-raised);
+  font-size: 0.74rem;
   font-weight: 600;
   color: var(--color-text);
   white-space: nowrap;
@@ -14,12 +15,12 @@
 
 .peb-badge--unknown {
   color: var(--color-text-muted);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .peb-badge-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
 }

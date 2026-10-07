@@ -7,6 +7,8 @@ import { ListingsPage } from './pages/Listings/ListingsPage'
 import { ListingDetailPage } from './pages/ListingDetail/ListingDetailPage'
 import { SearchProfilesPage } from './pages/SearchProfiles/SearchProfilesPage'
 import { SourcesPage } from './pages/Sources/SourcesPage'
+import { ImportListingPage } from './pages/ImportListing/ImportListingPage'
+import { IndexMethodologyPage } from './pages/IndexMethodology/IndexMethodologyPage'
 
 /** Root component: wires up global providers (React Query, Router) and the top-level route table. */
 function App() {
@@ -20,6 +22,8 @@ function App() {
             <Route path="/listings/:id" element={<ListingDetailPage />} />
             <Route path="/search-profiles" element={<SearchProfilesPage />} />
             <Route path="/sources" element={<SourcesPage />} />
+            <Route path="/import" element={<ImportListingPage />} />
+            <Route path="/indice" element={<IndexMethodologyPage />} />
           </Routes>
         </Layout>
       </BrowserRouter>

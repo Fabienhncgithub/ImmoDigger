@@ -1,53 +1,162 @@
 :root {
-  --color-background: #f5f6f8;
-  --color-surface: #ffffff;
-  --color-border: #e2e4e9;
-  --color-text: #101828;
-  --color-text-muted: #667085;
-  --color-accent: #2563eb;
-  --color-accent-soft: rgba(37, 99, 235, 0.1);
+  --color-background: #f4f6f9;
+  --color-background-elevated: #eef1f6;
+  --color-surface: #f8fafc;
+  --color-surface-raised: #ffffff;
+  --color-border: #e2e7ee;
+  --color-border-strong: #c9d1dd;
+  --color-text: #1a2333;
+  --color-text-muted: #5a6577;
+  --color-text-subtle: #8a94a5;
+  --color-accent: #1f4fd8;
+  --color-accent-strong: #173db0;
+  --color-accent-soft: #eaf0ff;
 
-  /* Status palette (fixed, mode-invariant - never used for series/branding). */
-  --status-good: #0ca30c;
-  --status-warning: #fab219;
-  --status-serious: #ec835a;
-  --status-critical: #d03b3b;
+  --status-good: #17794c;
+  --status-good-soft: #e6f4ec;
+  --status-warning: #a76500;
+  --status-warning-soft: #fdf3e1;
+  --status-serious: #ad4e00;
+  --status-critical: #c0271b;
+  --status-critical-soft: #fdecea;
 
-  color-scheme: light dark;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 1px 2px rgba(16, 24, 40, 0.05), 0 6px 16px rgba(16, 24, 40, 0.06);
+  --shadow-lg: 0 2px 4px rgba(16, 24, 40, 0.06), 0 14px 32px rgba(16, 24, 40, 0.1);
+
+  --page-gutter: clamp(1.25rem, 3vw, 2.5rem);
+  --page-max-width: 1280px;
+  --grid-gap: clamp(1rem, 1.6vw, 1.5rem);
+  --ease-out: cubic-bezier(0.22, 0.7, 0.2, 1);
+
+  color-scheme: light;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: #101216;
-    --color-surface: #181a20;
-    --color-border: #2b2e37;
-    --color-text: #e6e8ec;
-    --color-text-muted: #9aa1ad;
-    --color-accent: #5b8def;
-    --color-accent-soft: rgba(91, 141, 239, 0.15);
-  }
-}
-
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
+  min-width: 320px;
+  min-height: 100vh;
   margin: 0;
+  overflow-x: hidden;
   color: var(--color-text);
-  background-color: var(--color-background);
+  background: var(--color-background);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
 }
 
 h1,
 h2,
 h3 {
-  font-weight: 600;
   color: var(--color-text);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
 }
 
 a {
-  color: var(--color-accent);
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  color: inherit;
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(input:not([type='checkbox'], [type='radio']), select, textarea) {
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+}
+
+:where(input:not([type='checkbox'], [type='radio']), select, textarea):focus {
+  border-color: var(--color-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+
+:where(input[type='checkbox'], input[type='radio']) {
+  accent-color: var(--color-accent);
+}
+
+:where(a, button, summary):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  color: #fff;
+  background: var(--color-accent);
+}
+
+/*
+ * Breakpoints shared with the other apps (portfolio, FabRun):
+ * phone <= 426px, mobile <= 767px, tablet 768-1199px, laptop >= 1200px,
+ * wide >= 1920px. Plain CSS can't put a variable in a media query, so the
+ * values are repeated literally - keep to this scale.
+ */
+@media (max-width: 767px) {
+  :root {
+    --page-gutter: 1rem;
+    --grid-gap: 0.85rem;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  :root {
+    --page-gutter: clamp(1.5rem, 3.5vw, 2.5rem);
+    --grid-gap: 1.1rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --page-max-width: 1560px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

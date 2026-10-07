@@ -3,6 +3,7 @@
   flex-direction: column;
   gap: 0.4rem;
   min-width: 220px;
+  max-width: 100%;
   /* No flex-basis here: a growing/basis-set flex item inside a column-flex
      parent (as in SearchProfileForm's <label>) is sized along that column's
      main axis (height), not width, and stretches unexpectedly. Contexts
@@ -20,11 +21,12 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.15rem 0.3rem 0.15rem 0.55rem;
+  min-height: 32px;
+  padding: 0.3rem 0.4rem 0.3rem 0.6rem;
   border-radius: 999px;
   background-color: var(--color-accent-soft);
   color: var(--color-accent);
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -61,12 +63,10 @@
 
 .commune-select-input-wrapper input {
   width: 100%;
-  padding: 0.4rem 0.6rem;
-  border-radius: 6px;
-  border: 1px solid var(--color-border);
-  background-color: var(--color-background);
+  min-height: 46px;
+  padding: 0.6rem 0.85rem;
   color: var(--color-text);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
 }
 
 .commune-select-suggestions {
@@ -78,11 +78,11 @@
   margin: 0;
   padding: 0.25rem;
   list-style: none;
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-raised);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  max-height: 220px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  max-height: 320px;
   overflow-y: auto;
 }
 
@@ -91,12 +91,13 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 0.4rem 0.55rem;
+  min-height: 44px;
+  padding: 0.65rem 0.7rem;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--color-text);
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   text-align: left;
   cursor: pointer;
 }
@@ -107,7 +108,7 @@
 
 .commune-select-suggestion-code {
   color: var(--color-text-muted);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
 }
 

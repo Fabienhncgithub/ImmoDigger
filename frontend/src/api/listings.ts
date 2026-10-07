@@ -1,6 +1,7 @@
 import { apiClient, toQueryString } from './client'
 import type {
   AnalyzeListingResponse,
+  IndexMethodology,
   ListingDetail,
   ListingQueryParams,
   ListingSummary,
@@ -23,6 +24,8 @@ export const listingsApi = {
   markReviewed: (id: string) => apiClient.post<ListingDetail>(`/listings/${id}/mark-reviewed`),
 
   getPriceHistory: (id: string) => apiClient.get<PriceHistoryEntry[]>(`/listings/${id}/price-history`),
+
+  getIndexMethodology: () => apiClient.get<IndexMethodology>('/listings/index-methodology'),
 
   remove: (id: string) => apiClient.delete<void>(`/listings/${id}`),
 }

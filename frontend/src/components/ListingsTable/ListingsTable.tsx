@@ -33,8 +33,8 @@ export function ListingsTable({ listings }: ListingsTableProps) {
             <th>Surface</th>
             <th>PEB</th>
             <th>Rendement</th>
-            <th>Score</th>
-            <th>Risque</th>
+            <th>Indice</th>
+            <th>Vigilance</th>
             <th>Source</th>
             <th>Detectee le</th>
             <th aria-hidden="true"></th>
@@ -72,10 +72,10 @@ export function ListingsTable({ listings }: ListingsTableProps) {
                 </td>
                 <td className="listings-table-numeric">{formatPercent(listing.estimatedGrossYield)}</td>
                 <td>
-                  <ScoreBadge score={listing.opportunityScore} />
+                  <ScoreBadge score={listing.opportunityScore} criteriaCount={listing.indexCriteriaCount} />
                 </td>
                 <td>
-                  <RiskBadge riskLevel={listing.riskLevel} />
+                  <RiskBadge riskLevel={listing.riskLevel} summary={listing.riskSummary} />
                 </td>
                 <td>{listing.source}</td>
                 <td>{formatDate(listing.firstSeenAt)}</td>

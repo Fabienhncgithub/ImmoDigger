@@ -108,7 +108,11 @@ function ProfileCard({
           <dd>{profile.minimumUnitCount ?? '—'}</dd>
         </div>
         <div>
-          <dt>Score minimum</dt>
+          <dt>Surface minimum</dt>
+          <dd>{profile.minimumLivingArea === null ? '—' : `${profile.minimumLivingArea} m²`}</dd>
+        </div>
+        <div>
+          <dt>Indice minimum</dt>
           <dd>{profile.minimumOpportunityScore ?? '—'}</dd>
         </div>
       </dl>

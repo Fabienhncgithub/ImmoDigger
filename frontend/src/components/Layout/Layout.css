@@ -1,55 +1,246 @@
 .layout {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--color-background);
+  background: var(--color-background);
 }
 
 .layout-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+}
+
+.layout-header-inner {
+  max-width: var(--page-max-width);
+  height: 68px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  padding: 0.9rem 1.5rem;
-  background-color: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  gap: clamp(1rem, 2.5vw, 2.5rem);
+  margin: 0 auto;
+  padding: 0 var(--page-gutter);
 }
 
 .layout-brand {
-  font-size: 1.1rem;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: none;
   color: var(--color-text);
+  text-decoration: none;
+}
+
+.layout-brand-mark {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: #fff;
+  background: var(--color-accent);
+}
+
+.layout-brand-mark svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
+.layout-brand-name {
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.layout-brand-name b {
+  color: var(--color-accent);
+  font-weight: 800;
 }
 
 .layout-nav {
   display: flex;
-  flex-wrap: wrap;
+  align-items: stretch;
+  align-self: stretch;
   gap: 0.25rem;
 }
 
 .layout-nav-link {
-  padding: 0.45rem 0.8rem;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.8rem;
   color: var(--color-text-muted);
+  font-size: 0.94rem;
+  font-weight: 600;
   text-decoration: none;
+  white-space: nowrap;
+  transition: color 160ms var(--ease-out);
+}
+
+.layout-nav-link::after {
+  content: '';
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0;
+  left: 0.8rem;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transition: transform 200ms var(--ease-out);
 }
 
 .layout-nav-link:hover {
-  background-color: var(--color-background);
   color: var(--color-text);
 }
 
 .layout-nav-link.active {
-  background-color: var(--color-accent-soft);
   color: var(--color-accent);
+}
+
+.layout-nav-link.active::after {
+  transform: scaleX(1);
+}
+
+.layout-nav-icon {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  stroke-width: 1.8;
+}
+
+.layout-nav-mobile-label {
+  display: none;
+}
+
+.layout-header-aside {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex: none;
+  margin-left: auto;
+}
+
+.layout-mailbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  color: var(--status-good);
+  background: var(--status-good-soft);
+  font-size: 0.8rem;
   font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.layout-mailbox--offline {
+  color: var(--status-warning);
+  background: var(--status-warning-soft);
+}
+
+.layout-status-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.layout-avatar {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .layout-content {
-  flex: 1;
   width: 100%;
-  max-width: 1200px;
+  min-width: 0;
+  max-width: var(--page-max-width);
   margin: 0 auto;
-  padding: 1.75rem 1.5rem 3rem;
+  padding: clamp(1.5rem, 3vw, 2.5rem) var(--page-gutter) clamp(3rem, 6vw, 5rem);
+}
+
+/* Tablet and below: the navigation moves to a bottom tab bar. */
+@media (max-width: 1199px) {
+  /* A backdrop-filter would make the header the containing block of the
+     fixed tab bar below and pin it to the top instead of the viewport bottom. */
+  .layout-header {
+    background: #fff;
+    backdrop-filter: none;
+  }
+
+  .layout-header-inner {
+    height: 58px;
+  }
+
+  .layout-nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 30;
+    height: calc(62px + env(safe-area-inset-bottom));
+    justify-content: space-between;
+    gap: 0;
+    padding: 0 var(--page-gutter) env(safe-area-inset-bottom);
+    border-top: 1px solid var(--color-border);
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(12px);
+  }
+
+  .layout-nav-link {
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.2rem;
+    padding: 0.25rem 0.1rem;
+    font-size: 0.72rem;
+  }
+
+  .layout-nav-link::after {
+    top: 0;
+    right: 22%;
+    bottom: auto;
+    left: 22%;
+    border-radius: 0 0 3px 3px;
+  }
+
+  .layout-nav-icon {
+    width: 21px;
+    height: 21px;
+  }
+
+  .layout-nav-desktop-label {
+    display: none;
+  }
+
+  .layout-nav-mobile-label {
+    display: inline;
+  }
+
+  .layout-content {
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 426px) {
+  .layout-mailbox {
+    padding: 0.4rem;
+    font-size: 0;
+    gap: 0;
+  }
+
+  .layout-status-dot {
+    width: 9px;
+    height: 9px;
+  }
 }

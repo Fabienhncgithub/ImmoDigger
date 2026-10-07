@@ -26,6 +26,7 @@ export function SearchProfileForm({ initial, onSubmit, onCancel, isSubmitting }:
   const [maximumPrice, setMaximumPrice] = useState(initial?.maximumPrice?.toString() ?? '')
   const [minimumGrossYield, setMinimumGrossYield] = useState(initial?.minimumGrossYield?.toString() ?? '')
   const [minimumUnitCount, setMinimumUnitCount] = useState(initial?.minimumUnitCount?.toString() ?? '')
+  const [minimumLivingArea, setMinimumLivingArea] = useState(initial?.minimumLivingArea?.toString() ?? '')
   const [minimumOpportunityScore, setMinimumOpportunityScore] = useState(
     initial?.minimumOpportunityScore?.toString() ?? '',
   )
@@ -48,7 +49,7 @@ export function SearchProfileForm({ initial, onSubmit, onCancel, isSubmitting }:
       maximumPrice: maximumPrice ? Number(maximumPrice) : null,
       minimumGrossYield: minimumGrossYield ? Number(minimumGrossYield) : null,
       minimumUnitCount: minimumUnitCount ? Number(minimumUnitCount) : null,
-      minimumLivingArea: initial?.minimumLivingArea ?? null,
+      minimumLivingArea: minimumLivingArea ? Number(minimumLivingArea) : null,
       requireGarage,
       includePublicSales,
       postalCodes,
@@ -87,11 +88,23 @@ export function SearchProfileForm({ initial, onSubmit, onCancel, isSubmitting }:
           <input type="number" value={minimumUnitCount} onChange={(e) => setMinimumUnitCount(e.target.value)} />
         </label>
         <label>
-          Score minimum pour notification
+          Indice ImmoDigger minimum
           <input
             type="number"
             value={minimumOpportunityScore}
             onChange={(e) => setMinimumOpportunityScore(e.target.value)}
+          />
+        </label>
+      </div>
+
+      <div className="search-profile-form-row">
+        <label>
+          Surface habitable minimum (m²)
+          <input
+            type="number"
+            min="0"
+            value={minimumLivingArea}
+            onChange={(e) => setMinimumLivingArea(e.target.value)}
           />
         </label>
       </div>

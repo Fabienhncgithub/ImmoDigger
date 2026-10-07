@@ -4,11 +4,11 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.75rem;
-  padding: 0.75rem 0.1rem;
+  padding: 1.25rem 0.1rem;
 }
 
 .pagination-summary {
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   color: var(--color-text-muted);
 }
 
@@ -18,12 +18,14 @@
 }
 
 .pagination-controls button {
-  padding: 0.4rem 0.9rem;
-  border-radius: 6px;
-  border: 1px solid var(--color-border);
-  background-color: var(--color-surface);
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background-color: var(--color-surface-raised);
+  font-weight: 600;
   color: var(--color-text);
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   cursor: pointer;
 }
 

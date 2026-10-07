@@ -80,3 +80,12 @@ export function useDeleteListing() {
     },
   })
 }
+
+/** The index's criteria and scales never change at runtime, so they are fetched once. */
+export function useIndexMethodology() {
+  return useQuery({
+    queryKey: ['index-methodology'],
+    queryFn: listingsApi.getIndexMethodology,
+    staleTime: Infinity,
+  })
+}

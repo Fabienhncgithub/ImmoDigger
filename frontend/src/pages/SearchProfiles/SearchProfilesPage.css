@@ -2,24 +2,31 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   margin-bottom: 1.25rem;
 }
 
 .search-profiles-header h1 {
   margin: 0;
-  font-size: 1.4rem;
-  color: var(--color-text);
+  font-size: clamp(1.6rem, 2.6vw, 2rem);
 }
 
 .search-profiles-add-button {
-  padding: 0.45rem 0.9rem;
-  border-radius: 6px;
+  min-height: 46px;
+  padding: 0.6rem 1.1rem;
   border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  color: #fff;
   background-color: var(--color-accent);
-  color: white;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.92rem;
+  font-weight: 700;
   cursor: pointer;
+  transition: background-color 160ms var(--ease-out);
+}
+
+.search-profiles-add-button:hover {
+  background-color: var(--color-accent-strong);
 }
 
 .search-profiles-status {
@@ -28,15 +35,17 @@
 
 .search-profiles-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--grid-gap);
 }
 
 .search-profile-card {
-  background-color: var(--color-surface);
+  min-width: 0;
+  padding: 1.1rem 1.25rem;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
-  padding: 1rem 1.15rem;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-raised);
+  box-shadow: var(--shadow-sm);
 }
 
 .search-profile-card--disabled {
@@ -47,54 +56,60 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.6rem;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
 }
 
 .search-profile-card-header h2 {
   margin: 0;
-  font-size: 1rem;
-  color: var(--color-text);
+  font-size: 1.1rem;
 }
 
 .search-profile-card-status {
-  font-size: 0.72rem;
-  color: var(--color-text-muted);
-  border: 1px solid var(--color-border);
+  padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  padding: 0.1rem 0.5rem;
+  color: var(--status-good);
+  background: var(--status-good-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.search-profile-card--disabled .search-profile-card-status {
+  color: var(--color-text-muted);
+  background: var(--color-background);
 }
 
 .search-profile-card-facts {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
-  margin: 0 0 0.6rem;
+  gap: 0.75rem;
+  margin: 0 0 0.9rem;
 }
 
 .search-profile-card-facts dt {
-  font-size: 0.72rem;
   color: var(--color-text-muted);
+  font-size: 0.78rem;
 }
 
 .search-profile-card-facts dd {
-  margin: 0;
-  font-weight: 600;
-  font-size: 0.85rem;
+  margin: 0.1rem 0 0;
   color: var(--color-text);
+  font-size: 0.98rem;
+  font-weight: 600;
 }
 
 .search-profile-card-tags {
-  font-size: 0.78rem;
-  color: var(--color-text-muted);
   margin: 0 0 0.75rem;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
 }
 
 .search-profile-card-matches {
   display: inline-block;
-  margin: 0 0 0.75rem;
-  font-size: 0.82rem;
-  font-weight: 600;
+  margin: 0 0 0.9rem;
   color: var(--color-accent);
+  font-size: 0.94rem;
+  font-weight: 700;
   text-decoration: none;
 }
 
@@ -105,18 +120,45 @@
 .search-profile-card-actions {
   display: flex;
   gap: 0.5rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--color-border);
 }
 
 .search-profile-card-actions button {
-  padding: 0.35rem 0.75rem;
-  border-radius: 6px;
-  border: 1px solid var(--color-border);
-  background-color: var(--color-background);
+  min-height: 42px;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
   color: var(--color-text);
-  font-size: 0.8rem;
+  background-color: var(--color-surface-raised);
+  font-size: 0.88rem;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.search-profile-card-delete {
+.search-profile-card-actions button:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.search-profile-card-actions .search-profile-card-delete {
   color: var(--status-critical);
+}
+
+.search-profile-card-actions .search-profile-card-delete:hover {
+  border-color: var(--status-critical);
+  color: var(--status-critical);
+  background: var(--status-critical-soft);
+}
+
+@media (max-width: 1199px) {
+  .search-profiles-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .search-profiles-list {
+    grid-template-columns: 1fr;
+  }
 }

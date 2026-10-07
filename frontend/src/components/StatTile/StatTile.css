@@ -1,38 +1,105 @@
 .stat-tile {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  padding: 1rem 1.1rem;
-  background-color: var(--color-surface);
+  padding: 1.1rem 1.2rem;
   border: 1px solid var(--color-border);
-  border-left-width: 3px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
+  color: inherit;
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), transform 160ms var(--ease-out);
 }
 
-.stat-tile--neutral {
-  border-left-color: var(--color-border);
+.stat-tile--link {
+  cursor: pointer;
 }
 
-.stat-tile--good {
-  border-left-color: var(--status-good);
+.stat-tile--link:hover {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
-.stat-tile--warning {
-  border-left-color: var(--status-warning);
-}
-
-.stat-tile--critical {
-  border-left-color: var(--status-critical);
+.stat-tile-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .stat-tile-label {
-  font-size: 0.8rem;
   color: var(--color-text-muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.stat-tile-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.stat-tile-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.8;
+}
+
+.stat-tile--critical .stat-tile-icon {
+  color: var(--status-critical);
+  background: var(--status-critical-soft);
+}
+
+.stat-tile--good .stat-tile-icon {
+  color: var(--status-good);
+  background: var(--status-good-soft);
+}
+
+.stat-tile--warning .stat-tile-icon {
+  color: var(--status-warning);
+  background: var(--status-warning-soft);
 }
 
 .stat-tile-value {
-  font-size: 1.6rem;
-  font-weight: 700;
   color: var(--color-text);
+  font-size: clamp(1.6rem, 2.4vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
   font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.stat-tile--critical .stat-tile-value {
+  color: var(--status-critical);
+}
+
+.stat-tile-hint {
+  color: var(--color-text-subtle);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 767px) {
+  .stat-tile {
+    padding: 0.9rem;
+  }
+
+  .stat-tile-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .stat-tile-value {
+    font-size: 1.45rem;
+  }
 }

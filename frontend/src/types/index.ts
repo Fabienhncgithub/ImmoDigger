@@ -9,26 +9,43 @@ export interface PagedResult<T> {
   totalPages: number
 }
 
+/** What the listing's own text says about its planning situation (see the backend's UrbanisticStatusDetector). */
+export type UrbanisticStatus = 'Infraction' | 'Compliant' | 'Unknown'
+
 export interface ListingSummary {
   id: string
   source: string
   title: string
+  url: string
   imageUrl: string | null
+  description: string
+  address: string
   city: string
   postalCode: string
   askingPrice: number | null
   currentBid: number | null
   unitCount: number | null
+  bedroomCount: number | null
+  bathroomCount: number | null
+  officialDocumentCount: number
   livingArea: number | null
+  landArea: number | null
   pebRating: string | null
   estimatedGrossYield: number | null
   opportunityScore: number | null
   riskLevel: string | null
+  riskSummary: string | null
   saleType: string
   propertyType: string
   isActive: boolean
+  isDemo: boolean
   isReviewed: boolean
   firstSeenAt: string
+  urbanisticStatus: UrbanisticStatus
+  /** Earliest date the listing is known to have been on the market. */
+  listedSince: string
+  /** How many of the index's six criteria could be evaluated; null when there is no index. */
+  indexCriteriaCount: number | null
 }
 
 export interface ListingDetail {
@@ -50,7 +67,10 @@ export interface ListingDetail {
   bedroomCount: number | null
   bathroomCount: number | null
   officialUnitCount: number | null
+  officialUnitCountSourceName: string | null
+  officialUnitCountSourceUrl: string | null
   observedUnitCount: number | null
+  officialDocuments: ListingDocument[]
   livingArea: number | null
   landArea: number | null
   pebRating: string | null
@@ -67,6 +87,7 @@ export interface ListingDetail {
   lastSeenAt: string
   publishedAt: string | null
   isActive: boolean
+  isDemo: boolean
   opportunityScore: number | null
   estimatedGrossYield: number | null
   estimatedRenovationCost: number | null
@@ -78,6 +99,14 @@ export interface ListingDetail {
   personalNotes: string | null
   isReviewed: boolean
   reviewedAt: string | null
+  urbanisticStatus: UrbanisticStatus
+  listedSince: string
+}
+
+export interface ListingDocument {
+  type: string
+  name: string
+  url: string
 }
 
 export interface PriceHistoryEntry {
@@ -87,15 +116,41 @@ export interface PriceHistoryEntry {
 }
 
 export interface OpportunityScoreBreakdown {
-  totalScore: number
+  totalScore: number | null
+  rawScore: number
+  availablePoints: number
+  dataCompletenessPercentage: number
+  evaluatedCriteriaCount: number
+  totalCriteriaCount: number
   pricePerSquareMeterScore: number
+  pricePerSquareMeterAvailable: boolean
   grossYieldScore: number
+  grossYieldAvailable: boolean
   unitCountScore: number
+  unitCountAvailable: boolean
   locationScore: number
+  locationAvailable: boolean
   energyScore: number
+  energyAvailable: boolean
   riskScore: number
+  riskAvailable: boolean
+  missingData: string[]
   positiveSignals: string[]
   riskSignals: string[]
+}
+
+export interface IndexMethodology {
+  totalPoints: number
+  minimumAvailablePoints: number
+  strongOpportunityThreshold: number
+  criteria: Array<{
+    key: string
+    label: string
+    maxPoints: number
+    basis: string
+    countedWhen: string
+    steps: Array<{ condition: string; points: number }>
+  }>
 }
 
 export interface RiskAssessment {
@@ -125,18 +180,40 @@ export interface ListingQueryParams {
   maximumPrice?: number
   minimumUnits?: number
   minimumScore?: number
+  minimumGrossYield?: number
+  minimumLivingArea?: number
+  includePublicSales?: boolean
   riskLevel?: string
+  urbanisticStatus?: string
   source?: string
   saleType?: string
   isActive?: boolean
+  excludeDemo?: boolean
   hasGarage?: boolean
   pebRating?: string
   firstSeenFrom?: string
+  minimumAgeDays?: number
   searchText?: string
   sortBy?: string
   sortDescending?: boolean
   page?: number
   pageSize?: number
+}
+
+export interface ManualListingFields {
+  title: string
+  description?: string | null
+  address?: string | null
+  postalCode?: string | null
+  city?: string | null
+  price?: number | null
+  propertyType?: string | null
+  imageUrl?: string | null
+}
+
+export interface ImportUrlRequest {
+  url: string
+  manualFallback?: ManualListingFields
 }
 
 export interface SearchProfile {
@@ -184,9 +261,28 @@ export interface CollectionStatus {
   lastRunAt: string | null
 }
 
+export interface EmailImportStatus {
+  isConfigured: boolean
+  autoEnable: boolean
+  folder: string
+  lookbackDays: number
+  supportedSources: string[]
+  configurationIssues: string[]
+}
+
+export interface EmailImportConnectionTest {
+  success: boolean
+  messagesFound: number
+  message: string
+}
+
 export interface DashboardSummary {
   newListingsToday: number
   activeListingsCount: number
+  realActiveListingsCount: number
+  demoActiveListingsCount: number
+  pricedActiveListingsCount: number
+  scoredActiveListingsCount: number
   averagePrice: number | null
   averageScore: number | null
   strongOpportunitiesCount: number

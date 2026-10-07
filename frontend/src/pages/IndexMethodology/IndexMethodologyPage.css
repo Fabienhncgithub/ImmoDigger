@@ -1,0 +1,139 @@
+.index-page {
+  max-width: 1000px;
+}
+
+.index-page-header h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.6vw, 2rem);
+}
+
+.index-page-header p {
+  max-width: 68ch;
+  margin: 0.35rem 0 1.25rem;
+  color: var(--color-text-muted);
+}
+
+.index-page-status {
+  color: var(--color-text-muted);
+}
+
+.index-page-card {
+  margin-bottom: var(--grid-gap);
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-sm);
+}
+
+.index-page-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+}
+
+.index-page-card ul,
+.index-page-steps {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.index-page-card--warning {
+  border-left: 4px solid var(--status-warning);
+}
+
+.index-page-example {
+  margin: 1rem 0 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-soft);
+}
+
+.index-page-section-title {
+  margin: clamp(1.5rem, 3vw, 2.25rem) 0 1rem;
+  font-size: clamp(1.3rem, 2.2vw, 1.65rem);
+}
+
+.index-page-criteria {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--grid-gap);
+}
+
+.index-page-criterion {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.index-page-criterion-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.index-page-criterion-heading h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.index-page-criterion-heading span {
+  flex: none;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.index-page-criterion p {
+  margin: 0 0 0.6rem;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.index-page-criterion-when b {
+  color: var(--color-text);
+}
+
+.index-page-criterion table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.index-page-criterion td {
+  padding: 0.4rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.index-page-criterion td:last-child {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.index-page-footer {
+  margin: 1.25rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+}
+
+.index-page-footer a {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .index-page-card {
+    padding: 1rem;
+  }
+
+  .index-page-criteria {
+    grid-template-columns: 1fr;
+  }
+}

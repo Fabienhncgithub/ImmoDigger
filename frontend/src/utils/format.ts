@@ -1,3 +1,5 @@
+import type { UrbanisticStatus } from '../types'
+
 const currencyFormatter = new Intl.NumberFormat('fr-BE', {
   style: 'currency',
   currency: 'EUR',
@@ -30,7 +32,7 @@ export function formatPercent(value: number | null, fractionDigits = 1): string 
   return value === null ? '—' : `${value.toFixed(fractionDigits)} %`
 }
 
-/** The opportunity score is out of 100 points, not a percentage - matches ScoreBadge's "N/100" format. */
+/** The ImmoDigger comparison index is out of 100 points, not a market-value percentage. */
 export function formatScore(value: number | null): string {
   return value === null ? '—' : `${Math.round(value)}/100`
 }
@@ -44,7 +46,7 @@ export function formatDateTime(value: string | null): string {
 }
 
 const SALE_TYPE_LABELS: Record<string, string> = {
-  RegularSale: 'Vente de gre a gre',
+  RegularSale: 'Vente de gré à gré',
   PublicSale: 'Vente publique',
 }
 
@@ -52,11 +54,44 @@ export function formatSaleType(saleType: string): string {
   return SALE_TYPE_LABELS[saleType] ?? saleType
 }
 
+export const URBANISTIC_STATUS_LABELS: Record<UrbanisticStatus, string> = {
+  Infraction: 'Infraction ou à régulariser',
+  Compliant: 'Sans infraction (selon l’annonce)',
+  Unknown: 'À voir (non précisé)',
+}
+
+export function formatUrbanisticStatus(status: UrbanisticStatus): string {
+  return URBANISTIC_STATUS_LABELS[status] ?? URBANISTIC_STATUS_LABELS.Unknown
+}
+
+// How long a listing has been on the market, from the earliest date we know.
+// Past two months it is worth noticing; past four it has clearly not found
+// a buyer at that price, which is a negotiation signal.
+export const MARKET_AGE_AGING_DAYS = 60
+export const MARKET_AGE_STALE_DAYS = 120
+
+export interface MarketAge {
+  days: number
+  /** e.g. "12 jours", "3 mois". */
+  duration: string
+  tone: 'recent' | 'aging' | 'stale'
+}
+
+export function getMarketAge(listedSince: string, now: Date = new Date()): MarketAge {
+  const days = Math.max(0, Math.floor((now.getTime() - new Date(listedSince).getTime()) / 86_400_000))
+  const duration = days < MARKET_AGE_AGING_DAYS
+    ? `${days} jour${days > 1 ? 's' : ''}`
+    : `${Math.floor(days / 30)} mois`
+  const tone = days >= MARKET_AGE_STALE_DAYS ? 'stale' : days >= MARKET_AGE_AGING_DAYS ? 'aging' : 'recent'
+
+  return { days, duration, tone }
+}
+
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   IncomeBuilding: 'Immeuble de rapport',
   House: 'Maison',
   Apartment: 'Appartement',
-  Warehouse: 'Entrepot',
+  Warehouse: 'Entrepôt',
   Office: 'Bureau',
   Land: 'Terrain',
   Garage: 'Garage',
