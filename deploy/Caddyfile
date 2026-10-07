@@ -1,0 +1,7 @@
+# Terminates TLS (certificate obtained and renewed automatically) and hands
+# everything to the frontend container, which enforces the login.
+{$DOMAIN} {
+	encode gzip
+	header Strict-Transport-Security "max-age=31536000"
+	reverse_proxy frontend:80
+}

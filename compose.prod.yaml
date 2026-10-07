@@ -1,0 +1,37 @@
+# Production overlay: HTTPS in front, a login on everything, nothing else published.
+#
+#   docker compose -f compose.yaml -f compose.prod.yaml up --build -d
+#
+# Requires DOMAIN (pointing at this server), APP_USERS and POSTGRES_PASSWORD in .env.
+
+services:
+  db:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+
+  api:
+    ports: !reset []
+
+  frontend:
+    environment:
+      APP_USERS: ${APP_USERS:?Set APP_USERS in .env - the site must not be public without a login}
+    ports: !reset []
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - frontend
+
+volumes:
+  caddy-data:
+  caddy-config:
