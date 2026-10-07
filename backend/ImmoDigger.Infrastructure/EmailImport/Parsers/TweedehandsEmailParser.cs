@@ -11,10 +11,8 @@ namespace ImmoDigger.Infrastructure.EmailImport.Parsers;
 /// feed - and no RSS feed for search results could be found on the live
 /// site (checked robots.txt, the immo search page and their help center;
 /// nothing current). Same treatment as Immoweb/Immovlan/Zimmo: alert-email
-/// parsing only. Only matches the "2ememain.be" (French) sender domain for
-/// now - "2dehands.be" (same platform/company, Dutch mirror) would need
-/// its own domain added here if the user's alerts come from that side
-/// instead.
+/// parsing only. Both the French 2ememain.be and Dutch 2dehands.be sender
+/// and listing domains are recognized.
 ///
 /// The URL pattern below is a best-effort guess built from 2ememain's
 /// robots.txt (which disallows only the tracked "/v/.../m*?c=..." and
@@ -26,8 +24,8 @@ namespace ImmoDigger.Infrastructure.EmailImport.Parsers;
 /// maintenance rather than a design flaw.
 /// </summary>
 public sealed partial class TweedehandsEmailParser()
-    : TemplatedAlertEmailParser("2ememain", "2ememain.be", UrlPattern())
+    : TemplatedAlertEmailParser("2ememain", ["2ememain.be", "2dehands.be"], UrlPattern())
 {
-    [GeneratedRegex(@"2ememain\.be/[av]/[^""'\s]+/[ma](?<id>\d{6,})(?:\.html)?", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?:2ememain|2dehands)\.be/[av]/[^""'\s]+/[ma](?<id>\d{6,})(?:\.html)?", RegexOptions.IgnoreCase)]
     private static partial Regex UrlPattern();
 }

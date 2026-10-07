@@ -4,9 +4,18 @@ import type { UpdateSourceRequest } from '../types'
 
 const sourcesQueryKey = ['sources'] as const
 const collectionStatusQueryKey = ['collection', 'status'] as const
+const emailImportStatusQueryKey = ['sources', 'email-import-status'] as const
 
 export function useSources() {
   return useQuery({ queryKey: sourcesQueryKey, queryFn: sourcesApi.list })
+}
+
+export function useEmailImportStatus() {
+  return useQuery({ queryKey: emailImportStatusQueryKey, queryFn: sourcesApi.emailImportStatus })
+}
+
+export function useTestEmailImport() {
+  return useMutation({ mutationFn: sourcesApi.testEmailImport })
 }
 
 export function useUpdateSource() {
@@ -18,7 +27,11 @@ export function useUpdateSource() {
 }
 
 export function useCollectionStatus() {
-  return useQuery({ queryKey: collectionStatusQueryKey, queryFn: collectionApi.status })
+  return useQuery({
+    queryKey: collectionStatusQueryKey,
+    queryFn: collectionApi.status,
+    refetchInterval: 5_000,
+  })
 }
 
 export function useRunCollection() {

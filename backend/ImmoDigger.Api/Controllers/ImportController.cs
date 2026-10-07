@@ -11,6 +11,7 @@ namespace ImmoDigger.Api.Controllers;
 public class ImportController(
     IManualListingImportService importService,
     IListingDeduplicationService deduplicationService,
+    IInvestmentAnalysisService analysisService,
     IPropertyListingRepository repository) : ControllerBase
 {
     /// <summary>
@@ -23,9 +24,35 @@ public class ImportController(
     public async Task<ActionResult<ListingDetailDto>> ImportFromUrl(
         [FromBody] ImportUrlRequest request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Url))
+        if (!Uri.TryCreate(request.Url, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
-            return BadRequest("Url is required.");
+            return BadRequest("A valid absolute HTTP or HTTPS URL is required.");
+        }
+
+        if (request.Url.Length > 2000)
+        {
+            return BadRequest("URL must not exceed 2000 characters.");
+        }
+
+        if (request.ManualFallback is { } manual)
+        {
+            if (string.IsNullOrWhiteSpace(manual.Title))
+            {
+                return BadRequest("Manual fallback title is required.");
+            }
+
+            if (manual.Title.Length > 500 || manual.Address?.Length > 300 ||
+                manual.PostalCode?.Length > 20 || manual.City?.Length > 150 ||
+                manual.ImageUrl?.Length > 2000)
+            {
+                return BadRequest("One or more manual fallback fields exceed their maximum length.");
+            }
+
+            if (manual.Price is < 0)
+            {
+                return BadRequest("Price cannot be negative.");
+            }
         }
 
         var result = await importService.ImportFromUrlAsync(request, cancellationToken);
@@ -36,6 +63,13 @@ public class ImportController(
         }
 
         var outcome = await deduplicationService.ProcessAsync(result.Listing, cancellationToken);
+        if (outcome.Listing is not null)
+        {
+            // Manual imports must be immediately usable like collected
+            // listings: calculate yield/risk/score before returning them.
+            analysisService.Analyze(outcome.Listing);
+        }
+
         await repository.SaveChangesAsync(cancellationToken);
 
         return outcome.Listing is null

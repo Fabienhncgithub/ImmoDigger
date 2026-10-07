@@ -23,4 +23,30 @@ public class ImapSettings
     public string Username { get; set; } = string.Empty;
 
     public string Password { get; set; } = string.Empty;
+
+    /// <summary>Mailbox folder that receives the portal alerts.</summary>
+    public string Folder { get; set; } = "INBOX";
+
+    /// <summary>
+    /// Re-read this rolling window on every run. The database-level Message-ID
+    /// ledger removes duplicates, while the lookback prevents an alert being
+    /// lost if the process stops between IMAP fetch and database commit.
+    /// </summary>
+    public int LookbackDays { get; set; } = 7;
+
+    /// <summary>Safety cap for one collection cycle.</summary>
+    public int MaxMessagesPerRun { get; set; } = 250;
+
+    /// <summary>
+    /// Optional optimization for a dedicated mailbox. Disabled by default:
+    /// seen/unseen flags are user state and are not a reliable processing
+    /// checkpoint; ProcessedEmailMessage is the authoritative checkpoint.
+    /// </summary>
+    public bool UnseenOnly { get; set; }
+
+    /// <summary>
+    /// Enable the EmailImport source at startup when Host, Username and
+    /// Password are configured. Set false to keep manual UI control.
+    /// </summary>
+    public bool AutoEnable { get; set; } = true;
 }

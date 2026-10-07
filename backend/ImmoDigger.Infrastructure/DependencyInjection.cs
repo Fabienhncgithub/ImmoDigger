@@ -107,7 +107,7 @@ public static class DependencyInjection
         });
         services.AddScoped<IListingCollector, ProximusRealEstateCollector>();
 
-        // Email-import pipeline (Immoweb/Immovlan/Zimmo/2ememain/agencies):
+        // Email-import pipeline (major Belgian portals + agencies):
         // never touches those sites directly, only parses alert emails
         // already sitting in the user's own inbox. Falls back to the
         // no-op NullEmailInbox when no mailbox is configured (Imap:Host
@@ -117,10 +117,10 @@ public static class DependencyInjection
         // see ImapSettings's doc comment). Agency-specific parsers are
         // added by registering more AgencyEmailParser instances, not new
         // files.
+        services.Configure<ImapSettings>(configuration.GetSection(ImapSettings.SectionName));
         var imapHost = configuration[$"{ImapSettings.SectionName}:Host"];
         if (!string.IsNullOrWhiteSpace(imapHost))
         {
-            services.Configure<ImapSettings>(configuration.GetSection(ImapSettings.SectionName));
             services.AddScoped<IEmailInbox, ImapEmailInbox>();
         }
         else
@@ -132,6 +132,9 @@ public static class DependencyInjection
         services.AddScoped<IEmailListingParser, ImmovlanEmailParser>();
         services.AddScoped<IEmailListingParser, ZimmoEmailParser>();
         services.AddScoped<IEmailListingParser, TweedehandsEmailParser>();
+        services.AddScoped<IEmailListingParser, SpottoEmailParser>();
+        services.AddScoped<IEmailListingParser, ImmoscoopEmailParser>();
+        services.AddScoped<IEmailListingParser, RealoEmailParser>();
         services.AddScoped<IListingCollector, EmailImportListingCollector>();
 
         // Manual single-URL import ("POST /api/import/url"): a one-off,
@@ -141,7 +144,13 @@ public static class DependencyInjection
         {
             client.Timeout = TimeSpan.FromSeconds(10);
             client.DefaultRequestHeaders.UserAgent.ParseAdd(CollectorConstants.UserAgent);
+        }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            // Redirects are deliberately not followed: a public URL could
+            // otherwise redirect the server to a private/internal address.
+            AllowAutoRedirect = false,
         });
+        services.AddSingleton<IManualImportUrlSafetyChecker, ManualImportUrlSafetyChecker>();
         services.AddScoped<IManualListingImportService, OpenGraphManualImportService>();
 
         // Registered as itself (singleton) in addition to being hosted, so

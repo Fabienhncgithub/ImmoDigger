@@ -11,7 +11,7 @@ public class TweedehandsEmailParserTests
     [Theory]
     [InlineData("alerts@2ememain.be", true)]
     [InlineData("no-reply@2ememain.be", true)]
-    [InlineData("alerts@2dehands.be", false)] // Dutch mirror domain not covered yet - see class doc
+    [InlineData("alerts@2dehands.be", true)]
     [InlineData("alerts@immoweb.be", false)]
     public void CanParse_OnlyRecognizesThe2ememainDomain(string sender, bool expected)
     {

@@ -29,6 +29,13 @@ public class DashboardControllerTests
             AskingPrice = 500_000m, OpportunityScore = 40m, RiskLevel = "Low", IsActive = false,
             FirstSeenAt = DateTime.UtcNow.AddDays(-30), LastSeenAt = DateTime.UtcNow.AddDays(-30),
         });
+        await repository.AddAsync(new PropertyListing
+        {
+            Source = "Demo", ExternalId = "DEMO-1", Url = "https://x.invalid/demo", Title = "Demo listing",
+            SaleType = "RegularSale", PropertyType = "IncomeBuilding", RawContentHash = "demo",
+            AskingPrice = 900_000m, OpportunityScore = 100m, RiskLevel = "High", IsActive = true,
+            FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow,
+        });
         await repository.SaveChangesAsync();
         var controller = new DashboardController(repository);
 
@@ -37,8 +44,12 @@ public class DashboardControllerTests
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var summary = Assert.IsType<DashboardSummaryDto>(ok.Value);
         Assert.Equal(1, summary.NewListingsToday);
-        Assert.Equal(1, summary.ActiveListingsCount);
-        Assert.Equal(400_000m, summary.AveragePrice);
+        Assert.Equal(2, summary.ActiveListingsCount);
+        Assert.Equal(1, summary.RealActiveListingsCount);
+        Assert.Equal(1, summary.DemoActiveListingsCount);
+        Assert.Equal(1, summary.PricedActiveListingsCount);
+        Assert.Equal(1, summary.ScoredActiveListingsCount);
+        Assert.Equal(300_000m, summary.AveragePrice);
         Assert.Equal(1, summary.StrongOpportunitiesCount);
         Assert.Equal(1, summary.HighRiskCount);
         Assert.Equal(2, summary.RecentListings.Count);

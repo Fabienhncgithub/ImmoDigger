@@ -126,6 +126,7 @@ public class ListingsControllerTests
         var repository = new PropertyListingRepository(dbContext);
         var listing = CreateListing();
         listing.PebRating = "G";
+        listing.LivingArea = 200m;
         await repository.AddAsync(listing);
         await repository.SaveChangesAsync();
         var controller = CreateController(repository);
@@ -135,11 +136,11 @@ public class ListingsControllerTests
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var response = Assert.IsType<AnalyzeListingResponse>(ok.Value);
         Assert.NotNull(response.Listing.OpportunityScore);
-        Assert.Equal("High", response.RiskAssessment.RiskLevel);
+        Assert.Equal("Medium", response.RiskAssessment.RiskLevel);
 
         var reloaded = await repository.GetByIdAsync(listing.Id);
         Assert.NotNull(reloaded!.OpportunityScore);
-        Assert.Equal("High", reloaded.RiskLevel);
+        Assert.Equal("Medium", reloaded.RiskLevel);
     }
 
     [Fact]

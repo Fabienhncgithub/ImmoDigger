@@ -22,7 +22,7 @@ public class CollectionController(
     [HttpPost("run")]
     public IActionResult Run()
     {
-        _ = backgroundService.RunCollectionCycleAsync(CancellationToken.None);
+        _ = backgroundService.RunCollectionCycleAsync(CancellationToken.None, force: true);
         return Accepted();
     }
 

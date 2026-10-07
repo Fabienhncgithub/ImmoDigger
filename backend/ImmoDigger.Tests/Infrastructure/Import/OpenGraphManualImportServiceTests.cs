@@ -72,4 +72,50 @@ public class OpenGraphManualImportServiceTests
         Assert.Equal(200_000m, result.Listing.AskingPrice);
         Assert.Empty(handler.RequestedPaths);
     }
+
+    [Fact]
+    public async Task ImportFromUrlAsync_DoesNotFetch_WhenUrlSafetyCheckRejectsTheHost()
+    {
+        var handler = new FakeHttpMessageHandler()
+            .AddTextResponse("listing/unsafe", ReadFixture("og-page.html"), "text/html");
+        var sut = new OpenGraphManualImportService(
+            new FakeHttpClientFactory("https://example-test.invalid", handler),
+            NullLogger<OpenGraphManualImportService>.Instance,
+            new RejectAllUrlSafetyChecker());
+
+        var result = await sut.ImportFromUrlAsync(
+            new ImportUrlRequest { Url = "http://127.0.0.1/listing/unsafe" }, CancellationToken.None);
+
+        Assert.True(result.RequiresManualFallback);
+        Assert.Null(result.Listing);
+        Assert.Empty(handler.RequestedPaths);
+    }
+
+    [Theory]
+    [InlineData("127.0.0.1")]
+    [InlineData("10.0.0.1")]
+    [InlineData("172.16.0.1")]
+    [InlineData("192.168.1.1")]
+    [InlineData("169.254.169.254")]
+    [InlineData("::1")]
+    [InlineData("fc00::1")]
+    [InlineData("fe80::1")]
+    public void UrlSafetyChecker_RejectsNonPublicAddresses(string value)
+    {
+        Assert.False(ManualImportUrlSafetyChecker.IsPublicAddress(IPAddress.Parse(value)));
+    }
+
+    [Theory]
+    [InlineData("1.1.1.1")]
+    [InlineData("8.8.8.8")]
+    [InlineData("2606:4700:4700::1111")]
+    public void UrlSafetyChecker_AcceptsPublicAddresses(string value)
+    {
+        Assert.True(ManualImportUrlSafetyChecker.IsPublicAddress(IPAddress.Parse(value)));
+    }
+
+    private sealed class RejectAllUrlSafetyChecker : IManualImportUrlSafetyChecker
+    {
+        public Task<bool> IsSafeAsync(Uri uri, CancellationToken cancellationToken) => Task.FromResult(false);
+    }
 }

@@ -20,7 +20,9 @@ namespace ImmoDigger.Infrastructure.Import;
 /// <see cref="ImportUrlRequest.ManualFallback"/> instead.
 /// </summary>
 public class OpenGraphManualImportService(
-    IHttpClientFactory httpClientFactory, ILogger<OpenGraphManualImportService> logger)
+    IHttpClientFactory httpClientFactory,
+    ILogger<OpenGraphManualImportService> logger,
+    IManualImportUrlSafetyChecker? urlSafetyChecker = null)
     : IManualListingImportService
 {
     public const string HttpClientName = "ManualImport";
@@ -40,18 +42,49 @@ public class OpenGraphManualImportService(
 
     private async Task<CollectedListing?> TryFetchOpenGraphAsync(string url, CancellationToken cancellationToken)
     {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            (urlSafetyChecker is not null && !await urlSafetyChecker.IsSafeAsync(uri, cancellationToken)))
+        {
+            logger.LogWarning("Manual import: rejected unsafe or invalid URL {Url}.", url);
+            return null;
+        }
+
         string html;
         try
         {
             var client = httpClientFactory.CreateClient(HttpClientName);
-            var response = await client.GetAsync(url, cancellationToken);
+            using var response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 logger.LogInformation("Manual import: HTTP {Status} fetching {Url}, falling back to manual entry.", response.StatusCode, url);
                 return null;
             }
 
-            html = await response.Content.ReadAsStringAsync(cancellationToken);
+            const int maxPageBytes = 2 * 1024 * 1024;
+            if (response.Content.Headers.ContentLength is > maxPageBytes)
+            {
+                logger.LogInformation("Manual import: response from {Url} exceeds the {MaxBytes} byte limit.", url, maxPageBytes);
+                return null;
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var buffer = new MemoryStream();
+            var chunk = new byte[81920];
+            int total = 0;
+            int read;
+            while ((read = await stream.ReadAsync(chunk, cancellationToken)) > 0)
+            {
+                total += read;
+                if (total > maxPageBytes)
+                {
+                    logger.LogInformation("Manual import: response from {Url} exceeds the {MaxBytes} byte limit.", url, maxPageBytes);
+                    return null;
+                }
+
+                await buffer.WriteAsync(chunk.AsMemory(0, read), cancellationToken);
+            }
+
+            html = Encoding.UTF8.GetString(buffer.ToArray());
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
