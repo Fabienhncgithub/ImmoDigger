@@ -50,8 +50,21 @@ public class PropertyListing
     /// <summary>Number of units the source officially declares (e.g. cadastral records, listing metadata).</summary>
     public int? OfficialUnitCount { get; set; }
 
+    /// <summary>Name of the structured field or source document supporting <see cref="OfficialUnitCount"/>.</summary>
+    public string? OfficialUnitCountSourceName { get; set; }
+
+    /// <summary>Public URL of the source supporting <see cref="OfficialUnitCount"/>.</summary>
+    public string? OfficialUnitCountSourceUrl { get; set; }
+
     /// <summary>Number of units inferred from the free-text description (kitchens, meters, ...). See risk analysis.</summary>
     public int? ObservedUnitCount { get; set; }
+
+    /// <summary>
+    /// JSON snapshot of the official documents published with the source
+    /// listing. Stored as source metadata rather than downloaded copies so
+    /// the UI always opens the authoritative document.
+    /// </summary>
+    public string OfficialDocumentsJson { get; set; } = "[]";
 
     public decimal? LivingArea { get; set; }
 
@@ -113,6 +126,12 @@ public class PropertyListing
     public string? RiskLevel { get; set; }
 
     public string? RiskSummary { get; set; }
+
+    /// <summary>
+    /// What the listing's own text says about its planning situation:
+    /// "Infraction", "Compliant" or "Unknown". See <see cref="ImmoDigger.Domain.Common.UrbanisticStatus"/>.
+    /// </summary>
+    public string UrbanisticStatus { get; set; } = ImmoDigger.Domain.Common.UrbanisticStatus.Unknown;
 
     // --- Manual investment inputs (V1) ---------------------------------
     // The user fills these in manually on the listing detail page; a later

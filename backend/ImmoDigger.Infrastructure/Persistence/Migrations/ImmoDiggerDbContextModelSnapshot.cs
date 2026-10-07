@@ -293,8 +293,22 @@ namespace ImmoDigger.Infrastructure.Persistence.Migrations
                     b.Property<int?>("ObservedUnitCount")
                         .HasColumnType("integer");
 
+                    b.Property<string>("OfficialDocumentsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("[]");
+
                     b.Property<int?>("OfficialUnitCount")
                         .HasColumnType("integer");
+
+                    b.Property<string>("OfficialUnitCountSourceName")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("OfficialUnitCountSourceUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<decimal?>("OpportunityScore")
                         .HasPrecision(5, 2)
@@ -354,6 +368,13 @@ namespace ImmoDigger.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<string>("UrbanisticStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Unknown");
+
                     b.Property<string>("Url")
                         .IsRequired()
                         .HasMaxLength(2000)
@@ -370,6 +391,8 @@ namespace ImmoDigger.Infrastructure.Persistence.Migrations
                     b.HasIndex("OpportunityScore");
 
                     b.HasIndex("PostalCode");
+
+                    b.HasIndex("UrbanisticStatus");
 
                     b.HasIndex("Url");
 

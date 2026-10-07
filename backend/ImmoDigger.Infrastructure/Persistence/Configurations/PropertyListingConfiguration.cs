@@ -1,3 +1,4 @@
+using ImmoDigger.Domain.Common;
 using ImmoDigger.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -26,11 +27,15 @@ public class PropertyListingConfiguration : IEntityTypeConfiguration<PropertyLis
         builder.Property(l => l.PebRating).HasMaxLength(5);
         builder.Property(l => l.RiskLevel).HasMaxLength(20);
         builder.Property(l => l.RiskSummary).HasColumnType("text");
+        builder.Property(l => l.UrbanisticStatus).HasMaxLength(20).IsRequired().HasDefaultValue(UrbanisticStatus.Unknown);
         builder.Property(l => l.PersonalNotes).HasColumnType("text");
         builder.Property(l => l.RawContentHash).HasMaxLength(128).IsRequired();
         builder.Property(l => l.EmailMessageId).HasMaxLength(998);
         builder.Property(l => l.EmailSubject).HasMaxLength(998);
         builder.Property(l => l.EmailSender).HasMaxLength(320);
+        builder.Property(l => l.OfficialUnitCountSourceName).HasMaxLength(500);
+        builder.Property(l => l.OfficialUnitCountSourceUrl).HasMaxLength(2000);
+        builder.Property(l => l.OfficialDocumentsJson).HasColumnType("text").HasDefaultValue("[]");
 
         builder.Property(l => l.AskingPrice).HasPrecision(14, 2);
         builder.Property(l => l.CurrentBid).HasPrecision(14, 2);
@@ -57,6 +62,7 @@ public class PropertyListingConfiguration : IEntityTypeConfiguration<PropertyLis
         builder.HasIndex(l => l.City);
         builder.HasIndex(l => l.IsActive);
         builder.HasIndex(l => l.OpportunityScore);
+        builder.HasIndex(l => l.UrbanisticStatus);
         builder.HasIndex(l => l.FirstSeenAt);
 
         builder.HasMany(l => l.PriceHistory)
