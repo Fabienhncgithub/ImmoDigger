@@ -1,5 +1,6 @@
 using ImmoDigger.Domain.Common;
 using ImmoDigger.Domain.Entities;
+using ImmoDigger.Application.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace ImmoDigger.Infrastructure.Persistence.DemoData;
@@ -32,6 +33,15 @@ public static class DemoDataSeeder
 
         var now = DateTime.UtcNow;
         var listings = BuildDemoListings(now);
+
+        // Demo mode should exercise the dashboard and investment filters
+        // immediately, without asking the user to open and analyze ten
+        // records one by one.
+        var analysisService = new InvestmentAnalysisService();
+        foreach (var listing in listings)
+        {
+            analysisService.Analyze(listing);
+        }
 
         dbContext.PropertyListings.AddRange(listings);
 
@@ -80,8 +90,9 @@ public static class DemoDataSeeder
             PublishedAt = now.AddDays(-2),
             IsActive = true,
             RawContentHash = "demo-hash-biddit-001",
+            EstimatedMonthlyRentPerUnit = 900m,
             RiskLevel = RiskLevel.High,
-            RiskSummary = "Risque eleve : quatre cuisines sont decrites, mais seulement trois logements " +
+            RiskSummary = "Alerte majeure a verifier : quatre cuisines sont decrites, mais seulement trois logements " +
                           "semblent officiellement reconnus. Installation electrique non conforme. Vente publique.",
         };
         coghen.PriceHistory.Add(new ListingPriceHistory { Price = 400_000m, RecordedAt = now.AddDays(-2) });
@@ -116,8 +127,9 @@ public static class DemoDataSeeder
             PublishedAt = now.AddDays(-5),
             IsActive = true,
             RawContentHash = "demo-hash-immoweb-002",
+            EstimatedMonthlyRentPerUnit = 1_000m,
             RiskLevel = RiskLevel.Low,
-            RiskSummary = "Aucun signal de risque majeur detecte sur les donnees disponibles.",
+            RiskSummary = "Aucune alerte detectee dans les donnees disponibles. Les documents officiels restent a verifier.",
         };
         forest.PriceHistory.Add(new ListingPriceHistory { Price = 890_000m, RecordedAt = now.AddDays(-5) });
 
@@ -150,6 +162,7 @@ public static class DemoDataSeeder
             PublishedAt = now.AddDays(-9),
             IsActive = true,
             RawContentHash = "demo-hash-immovlan-003",
+            EstimatedMonthlyRentPerUnit = 900m,
             RiskLevel = RiskLevel.Medium,
             RiskSummary = "Conformite de l'installation electrique non precisee dans l'annonce.",
         };
@@ -184,8 +197,9 @@ public static class DemoDataSeeder
             PublishedAt = now.AddDays(-12),
             IsActive = true,
             RawContentHash = "demo-hash-zimmo-004",
+            EstimatedMonthlyRentPerUnit = 1_200m,
             RiskLevel = RiskLevel.Low,
-            RiskSummary = "Aucun signal de risque majeur detecte sur les donnees disponibles.",
+            RiskSummary = "Aucune alerte detectee dans les donnees disponibles. Les documents officiels restent a verifier.",
         };
         ixelles.PriceHistory.Add(new ListingPriceHistory { Price = 975_000m, RecordedAt = now.AddDays(-12) });
 
@@ -218,8 +232,9 @@ public static class DemoDataSeeder
             PublishedAt = now.AddDays(-15),
             IsActive = true,
             RawContentHash = "demo-hash-agency-005",
+            EstimatedMonthlyRentPerUnit = 850m,
             RiskLevel = RiskLevel.Low,
-            RiskSummary = "Aucun signal de risque majeur detecte sur les donnees disponibles.",
+            RiskSummary = "Aucune alerte detectee dans les donnees disponibles. Les documents officiels restent a verifier.",
         };
         anderlecht.PriceHistory.Add(new ListingPriceHistory { Price = 610_000m, RecordedAt = now.AddDays(-15) });
 
@@ -254,8 +269,9 @@ public static class DemoDataSeeder
             PublishedAt = now.AddDays(-3),
             IsActive = true,
             RawContentHash = "demo-hash-biddit-006",
+            EstimatedMonthlyRentPerUnit = 850m,
             RiskLevel = RiskLevel.High,
-            RiskSummary = "Risque eleve : aucune information urbanistique disponible et une extension " +
+            RiskSummary = "Alerte majeure a verifier : aucune information urbanistique disponible et une extension " +
                           "non documentee est mentionnee dans le descriptif. Vente publique.",
         };
         schaerbeek.PriceHistory.Add(new ListingPriceHistory { Price = 460_000m, RecordedAt = now.AddDays(-3) });
@@ -291,6 +307,7 @@ public static class DemoDataSeeder
             PublishedAt = now.AddDays(-20),
             IsActive = true,
             RawContentHash = "demo-hash-immoweb-007",
+            EstimatedMonthlyRentPerUnit = 850m,
             RiskLevel = RiskLevel.Medium,
             RiskSummary = "PEB peu performant (E) ; le rendement doit etre revu en tenant compte d'une " +
                           "possible renovation energetique.",
@@ -327,8 +344,9 @@ public static class DemoDataSeeder
             PublishedAt = now.AddDays(-7),
             IsActive = true,
             RawContentHash = "demo-hash-immovlan-008",
+            EstimatedMonthlyRentPerUnit = 950m,
             RiskLevel = RiskLevel.Low,
-            RiskSummary = "Aucun signal de risque majeur detecte sur les donnees disponibles.",
+            RiskSummary = "Aucune alerte detectee dans les donnees disponibles. Les documents officiels restent a verifier.",
         };
         etterbeek.PriceHistory.Add(new ListingPriceHistory { Price = 340_000m, RecordedAt = now.AddDays(-7) });
 
@@ -362,8 +380,9 @@ public static class DemoDataSeeder
             PublishedAt = now.AddDays(-18),
             IsActive = true,
             RawContentHash = "demo-hash-zimmo-009",
+            EstimatedMonthlyRentPerUnit = 1_300m,
             RiskLevel = RiskLevel.Low,
-            RiskSummary = "Aucun signal de risque majeur detecte sur les donnees disponibles.",
+            RiskSummary = "Aucune alerte detectee dans les donnees disponibles. Les documents officiels restent a verifier.",
         };
         woluwe.PriceHistory.Add(new ListingPriceHistory { Price = 1_250_000m, RecordedAt = now.AddDays(-18) });
 

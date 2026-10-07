@@ -39,6 +39,7 @@ public static class ReferenceDataSeeder
 
         var checkedAt = new DateTime(2026, 8, 6, 0, 0, 0, DateTimeKind.Utc);
         var recheckedAt = new DateTime(2026, 8, 9, 0, 0, 0, DateTimeKind.Utc);
+        var alertsExpandedAt = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc);
 
         var baseline = new List<ListingSource>
         {
@@ -51,6 +52,39 @@ public static class ReferenceDataSeeder
                 Allowed = true,
                 RobotsCheckedAt = checkedAt,
                 Notes = "Discovery via the published sitemap; listing detail via the public unauthenticated JSON endpoint the site's own app calls. No anti-bot protection found.",
+                PollingIntervalMinutes = 15,
+            },
+            new ListingSource
+            {
+                Name = "Spotto",
+                BaseUrl = "https://www.spotto.be",
+                IsEnabled = false,
+                CollectionMethod = CollectionMethod.Email,
+                Allowed = false,
+                TermsCheckedAt = alertsExpandedAt,
+                Notes = "ExternalAlertSource: Spotto officially offers personal saved-search notifications. Direct crawling stays Allowed=false; alerts already delivered to the configured mailbox are parsed by SpottoEmailParser.",
+                PollingIntervalMinutes = 15,
+            },
+            new ListingSource
+            {
+                Name = "Immoscoop",
+                BaseUrl = "https://www.immoscoop.be",
+                IsEnabled = false,
+                CollectionMethod = CollectionMethod.Email,
+                Allowed = false,
+                TermsCheckedAt = alertsExpandedAt,
+                Notes = "ExternalAlertSource: Immoscoop advertises new matching properties by email. Direct crawling stays Allowed=false; mailbox alerts are parsed by ImmoscoopEmailParser.",
+                PollingIntervalMinutes = 15,
+            },
+            new ListingSource
+            {
+                Name = "Realo",
+                BaseUrl = "https://www.realo.be",
+                IsEnabled = false,
+                CollectionMethod = CollectionMethod.Email,
+                Allowed = false,
+                TermsCheckedAt = alertsExpandedAt,
+                Notes = "ExternalAlertSource: saved-search notifications only. Direct crawling stays Allowed=false; mailbox notifications are parsed by RealoEmailParser, using Realo's stable property id for deduplication.",
                 PollingIntervalMinutes = 15,
             },
             new ListingSource
@@ -121,7 +155,7 @@ public static class ReferenceDataSeeder
                 IsEnabled = false,
                 CollectionMethod = CollectionMethod.Email,
                 Allowed = true,
-                Notes = "Parses alert emails already in the user's own inbox for Immoweb/Immovlan/Zimmo/agencies. Enable once a real IEmailInbox (IMAP or forwarding webhook) is configured; NullEmailInbox is a no-op until then.",
+                Notes = "Parses official saved-search alerts already in the user's own inbox for Immoweb, Immovlan, Zimmo, 2ememain/2dehands, Spotto, Immoscoop, Realo and agencies. Configure IMAP; startup enables this source automatically by default.",
                 PollingIntervalMinutes = 30,
             },
             new ListingSource

@@ -26,6 +26,9 @@ public interface IInvestmentAnalysisService
 
     OpportunityScoreBreakdown CalculateOpportunityScore(PropertyListing listing);
 
+    /// <summary>Describes the index's criteria and scales, straight from the values used to score.</summary>
+    IndexMethodologyDto DescribeIndex();
+
     /// <summary>
     /// Runs all three analyses and writes their results onto the listing
     /// (<see cref="PropertyListing.EstimatedGrossYield"/>,

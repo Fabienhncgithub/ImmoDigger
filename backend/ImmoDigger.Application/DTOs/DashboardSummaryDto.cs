@@ -4,6 +4,10 @@ namespace ImmoDigger.Application.DTOs;
 public sealed record DashboardStats(
     int NewListingsToday,
     int ActiveListingsCount,
+    int RealActiveListingsCount,
+    int DemoActiveListingsCount,
+    int PricedActiveListingsCount,
+    int ScoredActiveListingsCount,
     decimal? AveragePrice,
     decimal? AverageScore,
     int StrongOpportunitiesCount,
@@ -13,6 +17,10 @@ public sealed record DashboardStats(
 public sealed record DashboardSummaryDto(
     int NewListingsToday,
     int ActiveListingsCount,
+    int RealActiveListingsCount,
+    int DemoActiveListingsCount,
+    int PricedActiveListingsCount,
+    int ScoredActiveListingsCount,
     decimal? AveragePrice,
     decimal? AverageScore,
     int StrongOpportunitiesCount,

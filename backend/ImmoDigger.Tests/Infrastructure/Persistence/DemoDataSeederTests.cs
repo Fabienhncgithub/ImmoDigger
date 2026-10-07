@@ -17,6 +17,19 @@ public class DemoDataSeederTests
     }
 
     [Fact]
+    public async Task SeedAsync_PrecomputesScoresAndRepresentativeYields()
+    {
+        await using var dbContext = TestDbContextFactory.Create();
+
+        await DemoDataSeeder.SeedAsync(dbContext);
+
+        var listings = await dbContext.PropertyListings.ToListAsync();
+        Assert.All(listings, listing => Assert.NotNull(listing.OpportunityScore));
+        Assert.Equal(9, listings.Count(listing => listing.EstimatedGrossYield.HasValue));
+        Assert.Contains(listings, listing => listing.OpportunityScore >= 70m);
+    }
+
+    [Fact]
     public async Task SeedAsync_IncludesTheAvenueCoghenRiskScenario()
     {
         await using var dbContext = TestDbContextFactory.Create();

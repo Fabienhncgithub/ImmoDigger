@@ -20,7 +20,10 @@ public sealed record ListingDetailDto(
     int? BedroomCount,
     int? BathroomCount,
     int? OfficialUnitCount,
+    string? OfficialUnitCountSourceName,
+    string? OfficialUnitCountSourceUrl,
     int? ObservedUnitCount,
+    IReadOnlyCollection<ListingDocumentDto> OfficialDocuments,
     decimal? LivingArea,
     decimal? LandArea,
     string? PebRating,
@@ -37,6 +40,7 @@ public sealed record ListingDetailDto(
     DateTime LastSeenAt,
     DateTime? PublishedAt,
     bool IsActive,
+    bool IsDemo,
     decimal? OpportunityScore,
     decimal? EstimatedGrossYield,
     decimal? EstimatedRenovationCost,
@@ -47,4 +51,6 @@ public sealed record ListingDetailDto(
     decimal? EstimatedRenovationBudget,
     string? PersonalNotes,
     bool IsReviewed,
-    DateTime? ReviewedAt);
+    DateTime? ReviewedAt,
+    string UrbanisticStatus,
+    DateTime ListedSince);

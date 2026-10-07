@@ -113,15 +113,15 @@ public class InvestmentAnalysisServiceTests
     [Theory]
     [InlineData("F")]
     [InlineData("G")]
-    public void AssessRisk_ReturnsHigh_ForPoorPebRating(string pebRating)
+    public void AssessRisk_ReturnsAttention_ForPoorPebRating(string pebRating)
     {
         var listing = CreateListing();
         listing.PebRating = pebRating;
 
         var result = _sut.AssessRisk(listing);
 
-        Assert.Equal(RiskLevel.High, result.RiskLevel);
-        Assert.Contains(result.Signals, s => s.Contains("energetique", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(RiskLevel.Medium, result.RiskLevel);
+        Assert.Contains(result.Signals, s => s.Contains("PEB", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class InvestmentAnalysisServiceTests
         var result = _sut.AssessRisk(listing);
 
         Assert.Equal(RiskLevel.High, result.RiskLevel);
-        Assert.Contains(result.Signals, s => s.Contains("electrique", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(result.Signals, s => s.Contains("électrique", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public class InvestmentAnalysisServiceTests
     }
 
     [Fact]
-    public void AssessRisk_ReturnsHigh_ForPublicSaleWithoutUrbanisticInfo()
+    public void AssessRisk_ReturnsAttention_ForPublicSaleWithoutUrbanisticInfo()
     {
         var listing = CreateListing();
         listing.SaleType = "PublicSale";
@@ -158,7 +158,7 @@ public class InvestmentAnalysisServiceTests
 
         var result = _sut.AssessRisk(listing);
 
-        Assert.Equal(RiskLevel.High, result.RiskLevel);
+        Assert.Equal(RiskLevel.Medium, result.RiskLevel);
         Assert.Contains(result.Signals, s => s.Contains("urbanistique", StringComparison.OrdinalIgnoreCase));
     }
 
@@ -175,6 +175,31 @@ public class InvestmentAnalysisServiceTests
     }
 
     [Fact]
+    public void AssessRisk_ReturnsMedium_ForPublicSale_WhenDutchUrbanisticInfoIsMentioned()
+    {
+        var listing = CreateListing();
+        listing.SaleType = "PublicSale";
+        listing.Description = "RUIMTELIJKE ORDENING: omgevingsvergunning beschikbaar.";
+
+        var result = _sut.AssessRisk(listing);
+
+        Assert.Equal(RiskLevel.Medium, result.RiskLevel);
+        Assert.DoesNotContain(result.Signals, s => s.Contains("sans information urbanistique", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void AssessRisk_ReturnsHigh_WhenDescriptionSaysUrbanisticInformationIsMissing()
+    {
+        var listing = CreateListing();
+        listing.Description = "Aucune information urbanistique disponible et extension non documentee.";
+
+        var result = _sut.AssessRisk(listing);
+
+        Assert.Equal(RiskLevel.High, result.RiskLevel);
+        Assert.Contains(result.Signals, signal => signal.Contains("urbanistique", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void AssessRisk_ReturnsMedium_ForOccupiedProperty()
     {
         var listing = CreateListing();
@@ -183,7 +208,7 @@ public class InvestmentAnalysisServiceTests
         var result = _sut.AssessRisk(listing);
 
         Assert.Equal(RiskLevel.Medium, result.RiskLevel);
-        Assert.Contains(result.Signals, s => s.Contains("occupe", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(result.Signals, s => s.Contains("occupé", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -216,13 +241,13 @@ public class InvestmentAnalysisServiceTests
     public void AssessRisk_SummaryReflectsTheHighestSeveritySignal()
     {
         var listing = CreateListing();
-        listing.PebRating = "G"; // high
+        listing.ElectricalInstallationCompliant = false; // major alert
         listing.IsOccupied = true; // medium
 
         var result = _sut.AssessRisk(listing);
 
         Assert.Equal(RiskLevel.High, result.RiskLevel);
-        Assert.StartsWith("Risque eleve", result.RiskSummary);
+        Assert.StartsWith("Alerte majeure", result.RiskSummary);
     }
 
     // --- Opportunity score ----------------------------------------------------
@@ -241,11 +266,13 @@ public class InvestmentAnalysisServiceTests
 
         var breakdown = _sut.CalculateOpportunityScore(listing);
 
-        Assert.True(breakdown.TotalScore <= 100m);
+        Assert.NotNull(breakdown.TotalScore);
+        Assert.True(breakdown.TotalScore!.Value <= 100m);
         Assert.Equal(
             breakdown.PricePerSquareMeterScore + breakdown.GrossYieldScore + breakdown.UnitCountScore +
             breakdown.LocationScore + breakdown.EnergyScore + breakdown.RiskScore,
-            breakdown.TotalScore);
+            breakdown.RawScore);
+        Assert.Equal(100m, breakdown.AvailablePoints);
     }
 
     [Fact]
@@ -256,6 +283,8 @@ public class InvestmentAnalysisServiceTests
         var breakdown = _sut.CalculateOpportunityScore(listing);
 
         Assert.Equal(0m, breakdown.PricePerSquareMeterScore);
+        Assert.False(breakdown.PricePerSquareMeterAvailable);
+        Assert.Null(breakdown.TotalScore);
     }
 
     [Fact]
@@ -271,14 +300,15 @@ public class InvestmentAnalysisServiceTests
     }
 
     [Fact]
-    public void CalculateOpportunityScore_UsesNeutralDefault_ForUnknownPostalCode()
+    public void CalculateOpportunityScore_ExcludesUnknownPostalCode_FromTheIndex()
     {
         var listing = CreateListing();
         listing.PostalCode = "9999";
 
         var breakdown = _sut.CalculateOpportunityScore(listing);
 
-        Assert.Equal(5m, breakdown.LocationScore);
+        Assert.Equal(0m, breakdown.LocationScore);
+        Assert.False(breakdown.LocationAvailable);
     }
 
     [Fact]
@@ -330,6 +360,47 @@ public class InvestmentAnalysisServiceTests
         Assert.NotEmpty(breakdown.PositiveSignals);
     }
 
+    [Fact]
+    public void CalculateOpportunityScore_NormalizesOnlyAcrossAvailableCriteria()
+    {
+        var listing = CreateListing();
+        listing.AskingPrice = 300_000m;
+        listing.LivingArea = 200m; // 25/25
+        listing.ObservedUnitCount = 3; // 8/15
+        listing.PostalCode = "1000"; // 15/15
+
+        var breakdown = _sut.CalculateOpportunityScore(listing);
+
+        Assert.Equal(55m, breakdown.AvailablePoints);
+        Assert.Equal(48m, breakdown.RawScore);
+        Assert.Equal(87m, breakdown.TotalScore);
+        Assert.Equal(3, breakdown.EvaluatedCriteriaCount);
+    }
+
+    [Fact]
+    public void CalculateOpportunityScore_DoesNotRateAnUndocumentedListingAsBad()
+    {
+        var listing = CreateListing();
+
+        var breakdown = _sut.CalculateOpportunityScore(listing);
+
+        Assert.Null(breakdown.TotalScore);
+        Assert.True(breakdown.DataCompletenessPercentage < 40m);
+        Assert.NotEmpty(breakdown.MissingData);
+    }
+
+    [Fact]
+    public void EstimateGrossYield_UsesCurrentBidForAPublicSale()
+    {
+        var listing = CreateListing();
+        listing.SaleType = "PublicSale";
+        listing.CurrentBid = 300_000m;
+        listing.EstimatedMonthlyRentPerUnit = 625m;
+        listing.ObservedUnitCount = 3;
+
+        Assert.Equal(7.5m, _sut.EstimateGrossYield(listing));
+    }
+
     // --- Analyze (orchestration) --------------------------------------------
 
     [Fact]
@@ -344,8 +415,65 @@ public class InvestmentAnalysisServiceTests
         _sut.Analyze(listing);
 
         Assert.Equal(9m, listing.EstimatedGrossYield);
-        Assert.Equal(RiskLevel.High, listing.RiskLevel);
+        Assert.Equal(RiskLevel.Medium, listing.RiskLevel);
         Assert.False(string.IsNullOrWhiteSpace(listing.RiskSummary));
         Assert.NotNull(listing.OpportunityScore);
+    }
+
+    [Fact]
+    public void Analyze_FlagsAnUrbanisticInfractionMentionedInTheDescription()
+    {
+        var listing = CreateListing();
+        listing.AskingPrice = 400_000m;
+        listing.Description = "Infraction urbanistique : division en 4 appartements, régularisation à charge de l’acquéreur.";
+
+        _sut.Analyze(listing);
+
+        Assert.Equal(UrbanisticStatus.Infraction, listing.UrbanisticStatus);
+        Assert.Equal(RiskLevel.High, listing.RiskLevel);
+    }
+
+    [Fact]
+    public void Analyze_KeepsTheRiskLevelLow_WhenTheListingClaimsNoInfraction()
+    {
+        var listing = CreateListing();
+        listing.AskingPrice = 400_000m;
+        listing.Description = "Immeuble de rapport sans infraction urbanistique.";
+
+        _sut.Analyze(listing);
+
+        Assert.Equal(UrbanisticStatus.Compliant, listing.UrbanisticStatus);
+        Assert.Equal(RiskLevel.Low, listing.RiskLevel);
+    }
+
+    // --- Published methodology ----------------------------------------------
+
+    [Fact]
+    public void DescribeIndex_PublishesSixCriteriaWorthAHundredPoints()
+    {
+        var methodology = _sut.DescribeIndex();
+
+        Assert.Equal(6, methodology.Criteria.Count);
+        Assert.Equal(100m, methodology.TotalPoints);
+        Assert.Equal(100m, methodology.Criteria.Sum(criterion => criterion.MaxPoints));
+        Assert.All(methodology.Criteria, criterion =>
+            Assert.Equal(criterion.MaxPoints, criterion.Steps.Max(step => step.Points)));
+    }
+
+    [Fact]
+    public void DescribeIndex_MatchesWhatTheScoringActuallyAwards()
+    {
+        var listing = CreateListing();
+        listing.AskingPrice = 380_000m; // 1 900 EUR/m2 -> second price step
+        listing.LivingArea = 200m;
+        listing.PostalCode = "1060";
+        listing.PebRating = "C";
+
+        var breakdown = _sut.CalculateOpportunityScore(listing);
+        var criteria = _sut.DescribeIndex().Criteria.ToDictionary(criterion => criterion.Key);
+
+        Assert.Equal(criteria["pricePerSquareMeter"].Steps[1].Points, breakdown.PricePerSquareMeterScore);
+        Assert.Equal(criteria["location"].Steps.Single(step => step.Condition.StartsWith("1060")).Points, breakdown.LocationScore);
+        Assert.Equal(criteria["energy"].Steps.Single(step => step.Condition == "PEB C").Points, breakdown.EnergyScore);
     }
 }

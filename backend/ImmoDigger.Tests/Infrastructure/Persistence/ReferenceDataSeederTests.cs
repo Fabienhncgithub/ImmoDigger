@@ -156,4 +156,23 @@ public class ReferenceDataSeederTests
             Assert.False(s.IsEnabled);
         });
     }
+
+    [Fact]
+    public async Task SeedAsync_AddsTheExpandedOfficialAlertSources()
+    {
+        await using var dbContext = TestDbContextFactory.Create();
+
+        await ReferenceDataSeeder.SeedAsync(dbContext);
+
+        var sources = await dbContext.ListingSources
+            .Where(source => new[] { "Spotto", "Immoscoop", "Realo" }.Contains(source.Name))
+            .ToListAsync();
+        Assert.Equal(3, sources.Count);
+        Assert.All(sources, source =>
+        {
+            Assert.Equal(ImmoDigger.Domain.Common.CollectionMethod.Email, source.CollectionMethod);
+            Assert.False(source.Allowed);
+            Assert.False(source.IsEnabled);
+        });
+    }
 }

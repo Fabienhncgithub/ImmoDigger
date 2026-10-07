@@ -1,6 +1,7 @@
 using ImmoDigger.Application.DTOs;
 using ImmoDigger.Application.Interfaces;
 using ImmoDigger.Application.Mapping;
+using ImmoDigger.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ImmoDigger.Api.Controllers;
@@ -9,19 +10,20 @@ namespace ImmoDigger.Api.Controllers;
 [Route("api/dashboard")]
 public class DashboardController(IPropertyListingRepository repository) : ControllerBase
 {
-    // V1 placeholder threshold for "strong opportunity" - not derived from
-    // real portfolio data, easy to revisit once there is a track record.
-    private const decimal StrongOpportunityThreshold = 70m;
-
     [HttpGet("summary")]
     public async Task<ActionResult<DashboardSummaryDto>> GetSummary(CancellationToken cancellationToken)
     {
-        var stats = await repository.GetDashboardStatsAsync(StrongOpportunityThreshold, cancellationToken);
-        var recent = await repository.GetPagedAsync(new ListingQueryParameters { PageSize = 5 }, cancellationToken);
+        var stats = await repository.GetDashboardStatsAsync(InvestmentAnalysisService.StrongOpportunityThreshold, cancellationToken);
+        var recent = await repository.GetPagedAsync(
+            new ListingQueryParameters { PageSize = 5, IsActive = true }, cancellationToken);
 
         return Ok(new DashboardSummaryDto(
             stats.NewListingsToday,
             stats.ActiveListingsCount,
+            stats.RealActiveListingsCount,
+            stats.DemoActiveListingsCount,
+            stats.PricedActiveListingsCount,
+            stats.ScoredActiveListingsCount,
             stats.AveragePrice,
             stats.AverageScore,
             stats.StrongOpportunitiesCount,

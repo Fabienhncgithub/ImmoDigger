@@ -32,28 +32,47 @@ public class EmailListingImportService(
             if (parser is null)
             {
                 logger.LogDebug("Email import: no parser recognizes sender {Sender}, skipping.", message.Sender);
+
+                // Unknown mail (newsletters, mailbox noise, etc.) is final:
+                // remember it so the rolling IMAP lookback does not inspect
+                // it forever.
+                await MarkProcessedAsync(message, 0, cancellationToken);
+                continue;
             }
-            else
+
+            logger.LogInformation(
+                "Email import: {Count} listing(s) extracted from a {Source} alert ({Subject}).",
+                extracted.Count, parser.SourceName, message.Subject);
+
+            if (extracted.Count == 0)
             {
-                logger.LogInformation(
-                    "Email import: {Count} listing(s) extracted from a {Source} alert ({Subject}).",
-                    extracted.Count, parser.SourceName, message.Subject);
+                // A recognized portal changing its template is recoverable:
+                // do not checkpoint the message, so a parser update can
+                // process it on the next run while it remains in the IMAP
+                // lookback window.
+                logger.LogWarning(
+                    "Email import: a {Source} message was recognized but no listing URL could be parsed; " +
+                    "the message remains pending for retry (Message-ID {MessageId}).",
+                    parser.SourceName, message.MessageId);
+                continue;
             }
 
             results.AddRange(extracted);
-
-            await processedMessages.MarkProcessedAsync(
-                new ProcessedEmailMessage
-                {
-                    EmailMessageId = message.MessageId,
-                    Subject = message.Subject,
-                    Sender = message.Sender,
-                    ProcessedAt = DateTime.UtcNow,
-                    ListingsExtractedCount = extracted.Count,
-                },
-                cancellationToken);
+            await MarkProcessedAsync(message, extracted.Count, cancellationToken);
         }
 
         return results;
     }
+
+    private Task MarkProcessedAsync(EmailMessage message, int listingsExtractedCount, CancellationToken cancellationToken) =>
+        processedMessages.MarkProcessedAsync(
+            new ProcessedEmailMessage
+            {
+                EmailMessageId = message.MessageId,
+                Subject = message.Subject,
+                Sender = message.Sender,
+                ProcessedAt = DateTime.UtcNow,
+                ListingsExtractedCount = listingsExtractedCount,
+            },
+            cancellationToken);
 }

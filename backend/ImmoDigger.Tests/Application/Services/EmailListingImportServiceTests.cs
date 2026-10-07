@@ -106,4 +106,20 @@ public class EmailListingImportServiceTests
         Assert.Empty(secondResults);
         Assert.Single(parser.ParsedMessages);
     }
+
+    [Fact]
+    public async Task ImportAsync_DoesNotCheckpointARecognizedMessage_WhenItsTemplateCannotBeParsed()
+    {
+        await using var dbContext = TestDbContextFactory.Create();
+        var processedRepository = new ProcessedEmailMessageRepository(dbContext);
+        var parser = new FakeParser("Immoweb", "immoweb.be", listingsPerMessage: 0);
+        var message = CreateMessage("<broken@immoweb.be>", "alerts@immoweb.be");
+        var sut = new EmailListingImportService(
+            new FakeEmailInbox(message), [parser], processedRepository, NullLogger<EmailListingImportService>.Instance);
+
+        var results = await sut.ImportAsync(CancellationToken.None);
+
+        Assert.Empty(results);
+        Assert.False(await processedRepository.IsProcessedAsync(message.MessageId, CancellationToken.None));
+    }
 }

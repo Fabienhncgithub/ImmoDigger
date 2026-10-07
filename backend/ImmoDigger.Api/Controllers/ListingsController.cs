@@ -58,6 +58,10 @@ public class ListingsController(
         return NoContent();
     }
 
+    /// <summary>How the index is computed: criteria, scales and thresholds.</summary>
+    [HttpGet("index-methodology")]
+    public ActionResult<IndexMethodologyDto> GetIndexMethodology() => Ok(analysisService.DescribeIndex());
+
     /// <summary>Recomputes gross yield, risk assessment and opportunity score, and persists them.</summary>
     [HttpPost("{id:guid}/analyze")]
     public async Task<ActionResult<AnalyzeListingResponse>> Analyze(Guid id, CancellationToken cancellationToken)

@@ -44,7 +44,15 @@ public sealed record CollectedListing
 
     public int? OfficialUnitCount { get; init; }
 
+    /// <summary>Human-readable provenance for the official unit count.</summary>
+    public string? OfficialUnitCountSourceName { get; init; }
+
+    /// <summary>Listing or official-document URL supporting the official unit count.</summary>
+    public string? OfficialUnitCountSourceUrl { get; init; }
+
     public int? ObservedUnitCount { get; init; }
+
+    public IReadOnlyCollection<ListingDocumentDto> OfficialDocuments { get; init; } = [];
 
     public decimal? LivingArea { get; init; }
 
