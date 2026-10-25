@@ -1,5 +1,7 @@
 # ImmoDigger
 
+[![CI](https://github.com/Fabienhncgithub/ImmoDigger/actions/workflows/ci.yml/badge.svg)](https://github.com/Fabienhncgithub/ImmoDigger/actions/workflows/ci.yml)
+
 Real-estate watch tool I built to follow income properties for sale around
 Brussels. It pulls listings from several sources into one list, removes
 duplicates, keeps the price history and scores each property.
@@ -93,3 +95,21 @@ same values the code scores with.
   send; nothing bypasses a login or anti-bot protection.
 - Alert emails are short, so many listings are scored on two criteria only.
 - The interface is in French.
+
+## Development
+
+The automated checks build the API, run the xUnit suite, lint and build the
+frontend, and audit both dependency trees. Run the same checks locally:
+
+```bash
+dotnet test backend/ImmoDigger.slnx --configuration Release
+cd frontend
+npm ci
+npm run lint
+npm run build
+npm audit --audit-level=high
+```
+
+The tests cover imports, duplicate detection, price history and scoring,
+including incomplete listing data. Their persistence fixtures use EF Core's
+in-memory provider; they do not replace a deployment check against PostgreSQL.
