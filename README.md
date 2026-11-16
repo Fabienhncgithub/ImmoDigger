@@ -72,6 +72,24 @@ The production overlay adds HTTPS and requires a login. Set `DOMAIN`,
 On a server that already has a reverse proxy, use `compose.shared-proxy.yaml`
 instead and import `deploy/Caddyfile.shared-proxy` into it.
 
+On the OVH VPS, the shared proxy is `deploy-web-1` (FabRun). Its persistent
+site configurations are in `/opt/fabrun/deploy/sites/`. After starting
+ImmoDigger with `EDGE_NETWORK=photography-edge`, install its route and reload:
+
+```bash
+cp deploy/Caddyfile.shared-proxy /opt/fabrun/deploy/sites/immodigger.caddy
+docker exec deploy-web-1 caddy validate --config /etc/caddy/Caddyfile && \
+docker exec deploy-web-1 caddy reload --config /etc/caddy/Caddyfile
+curl -I https://guimmo.be
+curl -I https://www.guimmo.be
+```
+
+Both URLs should return `401` without credentials (the ImmoDigger login).
+A TLS error means the proxy route or certificate needs attention; `502`
+means the proxy cannot reach the frontend. Keep `immodigger.caddy` in the
+shared sites directory when updating the proxy; the proxy's main Caddyfile
+must continue importing `/etc/caddy/sites/*.caddy`.
+
 ## Index
 
 | Criterion | Points |

@@ -1,6 +1,6 @@
 # Site block to import into an existing Caddy proxy that shares a Docker
 # network with the frontend container (compose.shared-proxy.yaml).
-{$IMMODIGGER_DOMAIN:immodigger.example.com} {
+{$IMMODIGGER_DOMAIN:guimmo.be www.guimmo.be} {
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
